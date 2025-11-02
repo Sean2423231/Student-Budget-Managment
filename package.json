@@ -1,0 +1,29 @@
+{
+  "name": "student-budget-managment",
+  "version": "1.0.0",
+  "description": "Student Budget Managment Website",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon server/index.js",
+    "start": "node server/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sean2423231/Student-Budget-Managment.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sean2423231/Student-Budget-Managment/issues"
+  },
+  "homepage": "https://github.com/Sean2423231/Student-Budget-Managment#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "mysql2": "^3.15.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

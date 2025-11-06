@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Dashboard — Student Budget</title>
+		<link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
+		<link rel="stylesheet" href="../assets/CSS/JS/components.dashboard.css" />
+</head>
+<body>
+	<header class="dash-header">
+		<div class="container topbar">
+			<h1 class="app-title">Student Budget</h1>
+			<div class="header-actions">
+				<button class="btn">Placeholder</button>
+				<button class="btn"><a href="login.html">Sign out</a></button>
+			</div>
+		</div>
+		<!-- top tab bar-->
+		<div class="tab-bar container" role="tablist" aria-label="Main sections">
+			<div data-include="../assets/includes/topbar.html"></div>
+		</div>
+	</header>
+
+	<main class="container dashboard-grid">
+		<section class="left-col">
+			<div class="card large-chart">
+				<h3>Monthly budget</h3>
+				<div class="chart" aria-hidden="true"></div>
+			</div>
+
+			<div class="card mini">
+				<h4>Notes</h4>
+			</div>
+		</section>
+
+		<aside class="right-col">
+			<div class="card overview">
+				<div class="card-head">
+					<h3>Overview</h3>
+					<div class="filter"><label>Show: <select><option>All</option><option>Recurring</option><option>One-time</option></select></label></div>
+				</div>
+				<p class="muted">Overview of upcoming bills and income</p>
+			</div>
+
+			<div class="card bills">
+				<h4>Bills / Payments</h4>
+				<ul class="mini-list">
+					<li>ONE — <span class="muted">Due 1st</span></li>
+					<li>TWO — <span class="muted">Due 5th</span></li>
+					<li>THREE — <span class="muted">Due 12th</span></li>
+				</ul>
+			</div>
+
+			<div class="card income">
+				<h4>Income</h4>
+				<p class="large">+$6,700.00</p>
+			</div>
+		</aside>
+
+		<!-- floating chat bot launcher -->
+		<button class="chat-btn" aria-label="Open chat bot">🗨</button>
+	</main>
+
+		<script src="../assets/CSS/JS/main.global.js" defer></script>
+		<script src="../assets/CSS/JS/main.dashboard.js" defer></script>
+</body>
+</html>

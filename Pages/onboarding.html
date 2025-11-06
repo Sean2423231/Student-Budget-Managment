@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Create account — Student Budget</title>
+		<link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
+		<link rel="stylesheet" href="../assets/CSS/JS/components.login.css" />
+</head>
+<body>
+	<main class="auth-page">
+		<section class="auth-container">
+			<form id="signup-form" class="auth-form" novalidate>
+				<h2 class="form-title">Create your account</h2>
+
+				<div class="form-group">
+					<label for="signup-name">Full name</label>
+					<input id="signup-name" name="name" type="text" required autocomplete="name" />
+					<div class="error" id="signup-name-error" aria-live="polite"></div>
+				</div>
+
+				<div class="form-group">
+					<label for="signup-email">Email</label>
+					<input id="signup-email" name="email" type="email" required autocomplete="email" />
+					<div class="error" id="signup-email-error" aria-live="polite"></div>
+				</div>
+
+				<div class="form-group">
+					<label for="signup-password">Password</label>
+					<input id="signup-password" name="password" type="password" required minlength="8" autocomplete="new-password" />
+					<div class="error" id="signup-password-error" aria-live="polite"></div>
+				</div>
+
+				<div class="form-group">
+					<label for="signup-password-confirm">Confirm password</label>
+					<input id="signup-password-confirm" name="passwordConfirm" type="password" required autocomplete="new-password" />
+					<div class="error" id="signup-password-confirm-error" aria-live="polite"></div>
+				</div>
+
+
+
+				<button type="submit" class="btn primary">Create account</button>
+
+				<div class="form-message" id="signup-message" aria-live="polite"></div>
+				<p class="muted">Already have an account? <a href="login.html">Sign in</a></p>
+			</form>
+		</section>
+	</main>
+
+		<script src="../assets/CSS/JS/main.global.js" defer></script>
+		<script src="../assets/CSS/JS/main.login.js" defer></script>
+</body>
+</html>

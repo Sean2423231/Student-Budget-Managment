@@ -1,0 +1,39 @@
+/* Global variables and shared components used across pages */
+:root{
+  --bg:#f6f8fb;
+  --card:#ffffff;
+  --primary:#2b7cff;
+  --text:#1f2937;
+  --muted:#6b7280;
+  --danger:#e11d48;
+  --success:#059669;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);margin:0}
+
+/* container used by many pages */
+.container{max-width:1100px;margin:0 auto;padding:20px}
+
+/* Links & buttons */
+.inline-link{font-size:14px;color:var(--primary);text-decoration:none}
+.btn{padding:10px 14px;border-radius:8px;border:0;font-size:15px;cursor:pointer}
+.btn.primary{background:var(--primary);color:#fff}
+.btn:disabled{opacity:0.6;cursor:not-allowed}
+
+/* messages and small utilities */
+.error{color:var(--danger);font-size:13px;min-height:18px}
+.form-message{margin-top:6px;font-size:14px;min-height:20px}
+.form-message.success{color:var(--success)}
+.form-message.error{color:var(--danger)}
+.muted{color:var(--muted);font-size:13px;margin-top:8px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* top tab bar */
+.tab-bar{display:flex;gap:8px;padding:10px 0}
+.tab{background:transparent;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;color:var(--muted);text-decoration:none}
+.tab.active{background:rgba(43,124,255,0.08);color:var(--primary);font-weight:600}
+
+@media (max-width:480px){
+  .container{padding:12px}
+}

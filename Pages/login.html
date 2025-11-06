@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Login — Student Budget</title>
+		<link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
+		<link rel="stylesheet" href="../assets/CSS/JS/components.login.css" />
+	<meta name="description" content="Login to Student Budget Management" />
+</head>
+<body>
+	<main class="auth-page">
+		<section class="auth-container">
+			<form id="login-form" class="auth-form" novalidate>
+				<h2 class="form-title">Welcome back</h2>
+				<p class="form-sub">Sign in to continue to Student Budget</p>
+
+				<div class="form-group">
+					<label for="login-email">Email</label>
+					<input id="login-email" name="email" type="email" required autocomplete="email" />
+					<div class="error" id="login-email-error" aria-live="polite"></div>
+				</div>
+
+				<div class="form-group">
+					<label for="login-password">Password</label>
+					<input id="login-password" name="password" type="password" required minlength="8" autocomplete="current-password" />
+					<div class="error" id="login-password-error" aria-live="polite"></div>
+				</div>
+
+				<div class="form-row space-between">
+					<label class="checkbox">
+						<input type="checkbox" id="remember" name="remember" />
+						Remember me
+					</label>
+					<a class="inline-link" href="onboarding.html">Create account</a>
+				</div>
+
+				<button type="submit" class="btn primary">Sign in</button>
+
+				<div class="form-message" id="login-message" aria-live="polite"></div>
+			</form>
+		</section>
+	</main>
+
+		<script src="../assets/CSS/JS/main.global.js" defer></script>
+		<script src="../assets/CSS/JS/main.login.js" defer></script>
+</body>
+</html>

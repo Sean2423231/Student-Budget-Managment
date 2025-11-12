@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chart — Student Budget</title>
+    <link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Spending Breakdown</h1>
+      <div id="chart-root"></div>
+    </div>
+
+    <!-- React (UMD) from CDN — easy for small pages, no build step required -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <script>
+      const e = React.createElement;
+
+      // Simple SVG pie slice helper
+      function polarToCartesian(cx, cy, r, angleDeg) {
+        const a = (angleDeg - 90) * Math.PI / 180.0;
+        return { x: cx + (r * Math.cos(a)), y: cy + (r * Math.sin(a)) };
+      }
+
+      function describeArc(cx, cy, r, startAngle, endAngle) {
+        const start = polarToCartesian(cx, cy, r, endAngle);
+        const end = polarToCartesian(cx, cy, r, startAngle);
+        const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+        return ['M', cx, cy, 'L', start.x, start.y, 'A', r, r, 0, largeArcFlag, 0, end.x, end.y, 'Z'].join(' ');
+      }
+
+      function PieChart({ data, size = 240 }) {
+        const total = data.reduce((s, d) => s + d.value, 0) || 1;
+        let angle = 0;
+
+        const slices = data.map((d, i) => {
+          const valueAngle = (d.value / total) * 360;
+          const path = describeArc(size/2, size/2, size/2 - 2, angle, angle + valueAngle);
+          angle += valueAngle;
+          const color = `hsl(${(i * 73) % 360} 70% 60%)`;
+          return e('path', { key: i, d: path, fill: color, stroke: '#fff', 'stroke-width': 1 });
+        });
+
+        return e('svg', { width: size, height: size, viewBox: `0 0 ${size} ${size}` }, slices);
+      }
+
+      function ChartApp() {
+        const [data, setData] = React.useState([]);
+        const [loading, setLoading] = React.useState(true);
+        const [error, setError] = React.useState(null);
+
+        React.useEffect(() => {
+          fetch('/api/chart-data')
+            .then(r => r.json())
+            .then(j => {
+              if (j.ok) setData(j.data);
+              else setError('Failed to load');
+            })
+            .catch(e => setError(e.message))
+            .finally(() => setLoading(false));
+        }, []);
+
+        if (loading) return e('div', null, 'Loading...');
+        if (error) return e('div', { className: 'error' }, error);
+
+        return e('div', null,
+          e(PieChart, { data }),
+          e('ul', { className: 'muted' }, data.map((d, i) => e('li', { key: i }, `${d.label}: $${d.value}`)))
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('chart-root')).render(e(ChartApp));
+    </script>
+  </body>
+</html>

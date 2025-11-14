@@ -14,7 +14,7 @@ CREATE TABLE Users (
 CREATE TABLE Categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    name VARCHAR(50) NOT NULL, --e.g. groceries, rent, ect
+    name VARCHAR(50) NOT NULL, -- e.g. groceries, rent, etc
     kind ENUM('income', 'expense') NOT NULL,
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );

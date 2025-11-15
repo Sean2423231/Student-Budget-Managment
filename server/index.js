@@ -4,6 +4,10 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
+const cors = require('cors');
+
+// 
+app.use(cors());
 
 // Initialize database connection
 require('./db.js');
@@ -22,6 +26,14 @@ app.use('/api', require('./routes/test.routes')); // Corrected: removed .js exte
 // Fallback - serve homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'Pages', 'home.html'));
+});
+
+// health-check route
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Backend is talking to frontend!',
+  });
 });
 
 app.listen(port, () => {

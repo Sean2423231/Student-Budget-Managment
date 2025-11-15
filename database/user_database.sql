@@ -1,5 +1,5 @@
-CREATE DATABASE system_database;
-USE system_database;
+-- CREATE DATABASE system_database;
+-- USE system_database;
 
 -- USERS TABLE
 CREATE TABLE Users (

@@ -1,4 +1,4 @@
-/* Dashboard-specific styles (home) */
+/* Dashboard-specific styles (home.html) */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding-top:6px;padding-bottom:6px}
 .dashboard-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;padding:18px 0}
 .left-col,.right-col{display:flex;flex-direction:column;gap:12px}
@@ -13,7 +13,6 @@
 .mini-list li:last-child{border-bottom:0}
 .chat-btn{position:fixed;left:18px;bottom:18px;background:var(--primary);color:#fff;border:0;border-radius:50%;width:52px;height:52px;box-shadow:0 6px 18px rgba(43,124,255,0.18);cursor:pointer;font-size:20px}
 
-/* Responsive */
 @media (max-width:980px){
   .dashboard-grid{grid-template-columns:1fr 320px}
   .chart{width:180px;height:180px}

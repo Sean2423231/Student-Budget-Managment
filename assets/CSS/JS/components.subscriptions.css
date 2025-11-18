@@ -1,0 +1,44 @@
+/* Subscriptions calendar styles */
+.calendar-card{padding:16px;display:flex;flex-direction:column;gap:12px}
+.calendar-header{display:flex;align-items:center;justify-content:space-between}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.calendar-weekday{font-size:12px;color:var(--muted);text-align:center;padding:6px}
+.calendar-day{min-height:80px;background:var(--card);border-radius:8px;padding:8px;border:1px solid #eef2f6}
+.calendar-day .date{font-weight:600;margin-bottom:6px}
+.calendar-day .events{font-size:13px}
+.event-pill{display:inline-block;background:#f1f5f9;padding:4px 8px;border-radius:999px;margin:2px 0;font-size:12px}
+.event-pill.sub{background:rgba(43,124,255,0.08);color:var(--primary)}
+.calendar-footer{margin-top:8px}
+
+@media (max-width:700px){
+  .calendar-day{min-height:64px;padding:6px}
+}
+
+/* add subscription styles */
+.add-sub-card{margin-top:12px;padding:16px}
+.add-sub-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.add-sub-list li{display:block}
+.add-sub-list input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #eef2f6;height:44px}
+.add-sub-list .add-action{display:flex;justify-content:flex-end}
+.add-sub-list .add-action button{height:44px;border-radius:10px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center}
+
+@media (max-width:480px){
+  .add-sub-list .add-action{justify-content:stretch}
+  .add-sub-list .add-action button{width:100%}
+}
+
+/* two-column layout for subscriptions page */
+.subscriptions-grid{display:grid;grid-template-columns:1fr 320px;gap:18px}
+.right-col{display:flex;flex-direction:column;gap:12px}
+.subs-list-card .mini-list{max-height:260px;overflow:auto}
+.subs-list-card .mini-list li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #eef2f6}
+
+@media (max-width:700px){
+  .calendar-day{min-height:64px;padding:6px}
+  .subscriptions-grid{grid-template-columns:1fr}
+}
+
+
+
+
+

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Subscriptions — Student Budget</title>
+
+  <link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
+  <link rel="stylesheet" href="../assets/CSS/JS/components.subscriptions.css" />
+</head>
+
+<body>
+
+  <header class="dash-header">
+    <div class="container topbar">
+      <h1 class="app-title">Student Budget</h1>
+      <div class="header-actions">
+        <button class="btn">Placeholder</button>
+        <button id="sign-out" class="btn">Sign out</button>
+      </div>
+    </div>
+    <!-- top tab bar-->
+    <div class="tab-bar container" role="tablist" aria-label="Main sections">
+      <div data-include="../assets/includes/topbar.html"></div>
+    </div>
+  </header>
+
+
+
+  <main class="container">
+
+    <!-- Main layout: calendar on the left, controls/list on the right -->
+    <div class="subscriptions-grid">
+      <section class="card calendar-card" aria-label="Subscriptions calendar">
+        <div class="calendar-header">
+          <button id="prev-month" class="btn">◀</button>
+          <h2 id="calendar-title">Month Year</h2>
+          <button id="next-month" class="btn">▶</button>
+        </div>
+        <div id="calendar" class="calendar-grid" role="grid"></div>
+        <div class="calendar-footer">
+          <div>Total monthly subscriptions:
+            <strong id="subs-total">$0.00</strong>
+          </div>
+        </div>
+      </section>
+      <aside class="right-col">
+        <section class="card add-sub-card">
+          <h3>Add subscription</h3>
+          <ul class="add-sub-list" aria-label="Add subscription form">
+            <li>
+              <label for="new-name" class="sr-only">Subscription name</label>
+              <input id="new-name" placeholder="Name of subscription" />
+              <label for="new-day" class="sr-only">Day of month</label>
+              <input id="new-day" type="number" min="1" max="31" placeholder="Day of month" />
+              <label for="new-amount" class="sr-only">Amount</label>
+              <input id="new-amount" type="number" step="0.01" placeholder="Amount" />
+            <li class="add-action">
+              <button id="add-sub" class="btn primary">Add</button>
+            </li>
+          </ul>
+        </section>
+
+
+     
+        <section class="card subs-list-card">
+          <h3>Your subscriptions</h3>
+          <ul id="subs-list" class="mini-list"></ul>
+        </section>
+
+      </aside>
+    </div>
+
+  </main>
+
+
+  <script src="../assets/CSS/JS/main.global.js" defer></script>
+  <script src="../assets/CSS/JS/main.subscriptions.js" defer></script>
+
+</body>
+</html>

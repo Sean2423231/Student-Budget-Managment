@@ -30,8 +30,8 @@
         const terms = document.getElementById('terms');
 
         
-        helpers.setMessage('signup-message','Account created (demo) — taking you to login...','success');
-        setTimeout(() => { window.location.href = 'login.html' }, 1100);
+        helpers.setMessage('signup-message','Account created (demo) — taking you to onboarding...','success');
+        setTimeout(() => { window.location.href = 'onboarding.html?onboard=true' }, 1100);
       });
 
       const emailInput = document.getElementById('signup-email');

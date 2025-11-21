@@ -6,21 +6,22 @@ const app = express();
 const port = process.env.PORT || 3000;
 const cors = require('cors');
 
-// 
+
 app.use(cors());
 
-// Initialize database connection
+//Initialize database connection
 require('./db.js');
 
-// Serve static files (HTML, CSS, JS) from the parent directory
-app.use(express.static(path.join(__dirname, '..')));
+//Serve static files (HTML, CSS, JS) from the parent directory
+app.use(express.static(path.join(__dirname, '..', 'Pages')));
+app.use('/assets', express.static(path.join(__dirname, '..', 'assets'))); //added, wasnt loading the css and js files
 
-// Middleware to parse incoming JSON requests
+//Middleware to parse incoming JSON requests
 app.use(express.json());
 
 // API routes
 app.use('/api', require('./routes/chart.routes'));
-app.use('/api', require('./routes/test.routes')); // Corrected: removed .js extension
+app.use('/api', require('./routes/test.routes'));
 
 
 // Fallback - serve homepage

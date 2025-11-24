@@ -1,6 +1,3 @@
-// main.global.js — shared helpers and HTML include loader
-
-
 function validateEmail(v) {
   if (!v) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -49,6 +46,31 @@ async function loadHtmlIncludes() {
       console.error('Error loading include', url, e);
     }
   }
+  // Attach sign-out handlers to any page-level sign-out controls
+  try {
+    const signButtons = document.querySelectorAll('#sign-out, .sign-out, [data-signout]');
+    signButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        try { sessionStorage.removeItem('sb_user_email'); } catch (e) {}
+        window.location.href = 'login.html';
+      });
+    });
+  } catch (e) { /* ignore */ }
+
+  try {
+    const email = sessionStorage.getItem('sb_user_email');
+    if (email) {
+
+      const headerBtns = document.querySelectorAll('.header-actions .btn');
+      headerBtns.forEach(b => {
+        if (b.textContent && b.textContent.trim().toLowerCase() === 'placeholder') {
+          b.textContent = email;
+        }
+      });
+
+      // nothing else to show — sign-out is handled per-page
+    }
+  } catch (e) { }
 }
 
 function highlightActiveTab() {
@@ -56,7 +78,6 @@ function highlightActiveTab() {
     const tabs = document.querySelectorAll('.tab');
     const url = window.location.pathname.split('/').pop();
     tabs.forEach(t => {
-      // treat anchors and buttons
       const href = t.getAttribute('href');
       if (href) {
         const target = href.split('/').pop();
@@ -71,12 +92,24 @@ function highlightActiveTab() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // Redirect to login if this is a protected page and there's no session user
+  try {
+    const publicPages = ['login.html', 'onboarding.html', 'index.html', ''];
+    const raw = window.location.pathname.split('/').pop() || '';
+    const page = raw.split('?')[0];
+    const isPublic = publicPages.includes(page);
+    const loggedIn = !!sessionStorage.getItem('sb_user_email');
+    if (!isPublic && !loggedIn) {
+      window.location.href = 'login.html';
+      return;
+    }
+  } catch (e) { }
+
   await loadHtmlIncludes();
   highlightActiveTab();
   document.dispatchEvent(new CustomEvent('includesLoaded'));
 });
 
-// Expose helpers globally for page scripts
 window.appHelpers = {
   validateEmail,
   validatePassword,

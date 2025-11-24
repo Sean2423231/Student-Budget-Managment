@@ -1,0 +1,127 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../db.js');
+
+
+// Basic registration: create a new user with plain-text password.
+router.post('/register', async (req, res) => {
+  const { name, email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ ok: false, error: 'Missing email or password' });
+  }
+  try {
+    const [existing] = await db.query('SELECT 1 FROM Users WHERE email = ? LIMIT 1', [email]);
+    if (existing.length) {
+      return res.status(409).json({ ok: false, error: 'Email already registered' });
+    }
+    const [result] = await db.query('INSERT INTO Users (name, email, password) VALUES (?, ?, ?)', [name || null, email, password]);
+    const userId = result.insertId;
+    res.status(201).json({ ok: true, user: { id: userId, name: name || null, email } });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+
+
+//login
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ ok: false, error: 'Missing email or password' });
+  }
+
+  try {
+    // Try to find a user where the stored password equals the provided password
+    const [rows] = await db.query(
+      `SELECT user_id, name, email FROM Users WHERE email = ? AND password = ? LIMIT 1`,
+      [email, password]
+    );
+
+    if (!rows.length) {
+      return res.status(401).json({ ok: false, error: 'Invalid credentials' });
+    }
+
+    const user = rows[0];
+    res.json({ ok: true, user: { id: user.user_id, name: user.name, email: user.email } });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+router.get('/user/overview', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ok: false, error: 'Missing userId'});
+  }
+  try {
+    //Sum all positive amount  as income
+    const [[income]] = await db.query(
+      'SELECT IFNULL(SUM(amount),0) AS totalIncome FROM Transactions WHERE user_id = ? AND amount > 0',[userId]
+    );
+    //Sum all negative amount as expenses
+    const [[expenses]] = await db.query(
+      'SELECT IFNULL(SUM(amount),0) AS totalExpense FROM Transactions WHERE user_id = ? AND amount < 0',[userId]
+    );
+    //Sum all amount as balance
+    const [[balance]] = await db.query(
+      'SELECT IFNULL(SUM(amount),0) AS balance FROM Transactions WHERE user_id = ?',[userId]
+    );
+
+    const [bills] = await db.query(
+      `SELECT vendor, ABS(amount) AS amount, DATE_FORMAT(date, '%b %e') AS dueDate
+       FROM Transactions WHERE user_id = ? AND amount < 0
+       ORDER BY date ASC LIMIT 5`,[userId]
+    );
+    const [transactions] = await db.query(
+      `SELECT vendor, amount, DATE_FORMAT(date, '%b %e') AS dateLabel
+       FROM Transactions WHERE user_id = ?
+       ORDER BY date DESC LIMIT 6`,[userId]
+    );
+
+
+    res.json({
+      ok: true,
+      data: {
+        incomeTotal: Number(income.totalIncome || 0),
+        expenseTotal: Math.abs(Number(expenses.totalExpense || 0)),
+        balance: Number(balance.balance || 0),
+        bills,
+        transactions
+      }
+    });
+  } catch (err) {
+    console.error('Overview error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+
+router.get('/user/subscriptions', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ ok: false, error: 'Missing userId' });
+  }
+
+  try {
+    const [subs] = await db.query(
+      `SELECT s.sub_name AS name,
+              s.price AS amount,
+              COALESCE(DAY(s.next_renewal), 1) AS day,
+              s.frequency
+       FROM User_Subscription us
+       JOIN Subscriptions s ON s.sub_id = us.sub_id
+       WHERE us.user_id = ? AND us.active = 1
+       ORDER BY day ASC`, [userId]
+    );
+
+    res.json({ ok: true, subscriptions: subs });
+  } catch (err) {
+    console.error('Subscriptions error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+module.exports = router;

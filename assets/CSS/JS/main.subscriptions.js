@@ -152,7 +152,7 @@
 
     btn.onclick = function() {
       console.log("Signing out...");
-      localStorage.clear();
+      try { sessionStorage.removeItem('sb_user_email'); } catch (e) {}
       window.location.href = "login.html";
     };
   }

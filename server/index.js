@@ -10,29 +10,22 @@ const cors = require('cors');
 
 app.use(cors());
 
-// Initialize database connection
+//Initialize database connection
 require('./db.js');
-
-// Serve files from the parent directory
 app.use(express.static(path.join(__dirname, '..')));
 app.use(express.json());
 
 // API routes
 app.use('/api', require('./routes/chart.routes'));
-<<<<<<< Updated upstream
 app.use('/api', require('./routes/test.routes')); 
-=======
-app.use('/api', require('./routes/test.routes')); // Corrected: removed .js extension
 app.use('/api', require('./routes/user.routes'));
->>>>>>> Stashed changes
 
 
-// Fallback serve homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'Pages', 'home.html'));
 });
 
-// Generic handler
+
 app.get('/:page.html', (req, res, next) => {
   const page = req.params.page;
   const filePath = path.join(__dirname, '..', 'Pages', `${page}.html`);
@@ -42,7 +35,6 @@ app.get('/:page.html', (req, res, next) => {
   return next(); 
 });
 
-// Redirects shorthand
 app.get('/:page', (req, res, next) => {
   const page = req.params.page;
   const filePath = path.join(__dirname, '..', 'Pages', `${page}.html`);
@@ -52,7 +44,6 @@ app.get('/:page', (req, res, next) => {
   return next();
 });
 
-// health-check route
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',

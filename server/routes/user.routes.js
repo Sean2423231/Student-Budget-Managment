@@ -2,37 +2,55 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db.js');
 
-//POST /api/login 
-//Basic check so a student can log in with an email + password that already lives in the DB.
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body || {};
+
+// Basic registration: create a new user with plain-text password.
+router.post('/register', async (req, res) => {
+  const { name, email, password } = req.body || {};
   if (!email || !password) {
-    return res.status(400).json({ok: false, error: 'Missing email or password'});
+    return res.status(400).json({ ok: false, error: 'Missing email or password' });
   }
-
-  try { //Check credentials
-    const [rows] = await db.query(
-      'SELECT user_id, name, email, password FROM Users WHERE email = ?', [email]
-    );
-
-    if (!rows.length || rows[0].password !== password) { //No user found w/ that email or user exits but password doesn't match
-      return res.status(401).json({ok: false, error: 'Invalid credentials'});
+  try {
+    const [existing] = await db.query('SELECT 1 FROM Users WHERE email = ? LIMIT 1', [email]);
+    if (existing.length) {
+      return res.status(409).json({ ok: false, error: 'Email already registered' });
     }
-
-    //Send back response, successful login
-    const user = rows[0];
-    res.json({ 
-      ok: true,
-      user: { id: user.user_id, name: user.name, email: user.email }
-    });
+    const [result] = await db.query('INSERT INTO Users (name, email, password) VALUES (?, ?, ?)', [name || null, email, password]);
+    const userId = result.insertId;
+    res.status(201).json({ ok: true, user: { id: userId, name: name || null, email } });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ok: false, error: 'Server error'});
+    console.error('Register error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
 
-//GET /api/user/overview?userId=123 
-//Grab money info so we can fill cards without extra math on the front end.
+
+
+//login
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ ok: false, error: 'Missing email or password' });
+  }
+
+  try {
+    // Try to find a user where the stored password equals the provided password
+    const [rows] = await db.query(
+      `SELECT user_id, name, email FROM Users WHERE email = ? AND password = ? LIMIT 1`,
+      [email, password]
+    );
+
+    if (!rows.length) {
+      return res.status(401).json({ ok: false, error: 'Invalid credentials' });
+    }
+
+    const user = rows[0];
+    res.json({ ok: true, user: { id: user.user_id, name: user.name, email: user.email } });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
 router.get('/user/overview', async (req, res) => {
   const { userId } = req.query;
   if (!userId) {
@@ -52,7 +70,6 @@ router.get('/user/overview', async (req, res) => {
       'SELECT IFNULL(SUM(amount),0) AS balance FROM Transactions WHERE user_id = ?',[userId]
     );
 
-    //Pull 5 most recent bills and 6 most recent transactions for the user.
     const [bills] = await db.query(
       `SELECT vendor, ABS(amount) AS amount, DATE_FORMAT(date, '%b %e') AS dueDate
        FROM Transactions WHERE user_id = ? AND amount < 0
@@ -64,7 +81,7 @@ router.get('/user/overview', async (req, res) => {
        ORDER BY date DESC LIMIT 6`,[userId]
     );
 
-    //Send back response
+
     res.json({
       ok: true,
       data: {
@@ -81,8 +98,7 @@ router.get('/user/overview', async (req, res) => {
   }
 });
 
-//GET /api/user/subscriptions?userId=123
-//Reuse the same user id to pull their subscription list for the calendar/list UI.
+
 router.get('/user/subscriptions', async (req, res) => {
   const { userId } = req.query;
   if (!userId) {
@@ -90,7 +106,6 @@ router.get('/user/subscriptions', async (req, res) => {
   }
 
   try {
-    //Links two tables. User_Subscription is linking table between users and subscriptions 
     const [subs] = await db.query(
       `SELECT s.sub_name AS name,
               s.price AS amount,
@@ -102,7 +117,6 @@ router.get('/user/subscriptions', async (req, res) => {
        ORDER BY day ASC`, [userId]
     );
 
-//Send back response
     res.json({ ok: true, subscriptions: subs });
   } catch (err) {
     console.error('Subscriptions error:', err);

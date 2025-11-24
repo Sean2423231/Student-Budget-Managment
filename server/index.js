@@ -2,6 +2,7 @@ require('dotenv').config(); // Loads environment variables from .env file
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 const port = process.env.PORT || 3000;
 const cors = require('cors');
@@ -12,22 +13,40 @@ app.use(cors());
 //Initialize database connection
 require('./db.js');
 
-//Serve static files (HTML, CSS, JS) from the parent directory
-app.use(express.static(path.join(__dirname, '..', 'Pages')));
-app.use('/assets', express.static(path.join(__dirname, '..', 'assets'))); //added, wasnt loading the css and js files
+// Serve static files (HTML, CSS, JS) from the parent directory
+app.use(express.static(path.join(__dirname, '..')));
 
-//Middleware to parse incoming JSON requests
+// Middleware to parse incoming JSON requests
 app.use(express.json());
 
 // API routes
 app.use('/api', require('./routes/chart.routes'));
-app.use('/api', require('./routes/test.routes'));
-app.use('/api', require('./routes/user.routes')); //test
+app.use('/api', require('./routes/test.routes')); // Corrected: removed .js extension
 
 
-// Fallback - serve homepage
+// Fallback serve homepage
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'Pages', 'home.html'));
+});
+
+// Generic handler
+app.get('/:page.html', (req, res, next) => {
+  const page = req.params.page;
+  const filePath = path.join(__dirname, '..', 'Pages', `${page}.html`);
+  if (fs.existsSync(filePath)) {
+    return res.sendFile(filePath);
+  }
+  return next(); 
+});
+
+// Redirects shorthand
+app.get('/:page', (req, res, next) => {
+  const page = req.params.page;
+  const filePath = path.join(__dirname, '..', 'Pages', `${page}.html`);
+  if (fs.existsSync(filePath)) {
+    return res.redirect(`/${page}.html`);
+  }
+  return next();
 });
 
 // health-check route

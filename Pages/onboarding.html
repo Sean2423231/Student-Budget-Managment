@@ -10,6 +10,19 @@
 <body>
 	<main class="auth-page">
 		<section class="auth-container">
+
+		  <!-- Onboarding CTAs (hidden by default) - will appear on top of the card when ?onboard=true -->
+		  <div id="onboard-ctas" style="display:none;margin-bottom:12px">
+		    <div class="card" style="padding:12px">
+		      <h3>Get started</h3>
+		      <p class="muted">Nice — your account is ready. Pick one of the quick setup steps below to finish onboarding.</p>
+		      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+		        <a href="/checkings?onboard=true" class="btn primary">Add checking</a>
+		        <a href="/subscriptions?onboard=true" class="btn">Add subscriptions</a>
+		      </div>
+		    </div>
+		  </div>
+
 			<form id="signup-form" class="auth-form" novalidate>
 				<h2 class="form-title">Create your account</h2>
 
@@ -46,6 +59,36 @@
 			</form>
 		</section>
 	</main>
+
+	<section class="container" id="onboard-ctas" style="display:none;margin-top:18px">
+	  <div class="card">
+	    <h2>Get started</h2>
+	    <p class="muted">Nice — your account is ready. Pick one of the quick setup steps below to finish onboarding.</p>
+	    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+	      <a href="/checkings?onboard=true" class="btn primary">Add checking</a>
+	      <a href="/subscriptions?onboard=true" class="btn">Add subscriptions</a>
+	    </div>
+	  </div>
+	</section>
+
+	<script>
+	  (function(){
+	    function showOnboardIfNeeded(){
+	      const params = new URLSearchParams(window.location.search);
+			if(params.get('onboard') === 'true'){
+				const form = document.getElementById('signup-form');
+				const authContainer = document.querySelector('.auth-container');
+				const ctas = document.getElementById('onboard-ctas');
+				if(authContainer) authContainer.style.display = '';
+				if(form) form.style.display = 'none';
+				if(ctas) ctas.style.display = 'block';
+			}
+	    }
+	    if(document.readyState === 'loading'){
+	      document.addEventListener('DOMContentLoaded', showOnboardIfNeeded);
+	    } else { showOnboardIfNeeded(); }
+	  })();
+	</script>
 
 		<script src="../assets/CSS/JS/main.global.js" defer></script>
 		<script src="../assets/CSS/JS/main.login.js" defer></script>

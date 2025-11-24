@@ -38,23 +38,35 @@
 			<div class="card overview">
 				<div class="card-head">
 					<h3>Overview</h3>
-					<div class="filter"><label>Show: <select><option>All</option><option>Recurring</option><option>One-time</option></select></label></div>
 				</div>
-				<p class="muted">Overview of upcoming bills and income</p>
+				<div id="overview-stats">
+					<div style="margin-bottom: 12px;">
+						<p class="muted">Balance</p>
+						<p class="large" id="balance-amount">$0.00</p>
+					</div>
+					<div style="margin-bottom: 12px;">
+						<p class="muted">Monthly Income</p>
+						<p id="income-amount">$0.00</p>
+					</div>
+					<div>
+						<p class="muted">Monthly Expenses</p>
+						<p id="expense-amount">$0.00</p>
+					</div>
+				</div>
 			</div>
 
 			<div class="card bills">
-				<h4>Bills / Payments</h4>
-				<ul class="mini-list">
-					<li>ONE — <span class="muted">Due 1st</span></li>
-					<li>TWO — <span class="muted">Due 5th</span></li>
-					<li>THREE — <span class="muted">Due 12th</span></li>
+				<h4>Upcoming Bills / Payments</h4>
+				<ul class="mini-list" id="bills-list">
+					<li class="muted">Loading...</li>
 				</ul>
 			</div>
 
 			<div class="card income">
-				<h4>Income</h4>
-				<p class="large">+$6,700.00</p>
+				<h4>Recent Transactions</h4>
+				<ul class="mini-list" id="transactions-list">
+					<li class="muted">Loading...</li>
+				</ul>
 			</div>
 		</aside>
 

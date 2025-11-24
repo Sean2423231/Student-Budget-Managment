@@ -32,7 +32,12 @@
           }
 
             if (data.user && data.user.email) {
-              try { sessionStorage.setItem('sb_user_email', data.user.email); } catch (e) {}
+              try {
+                sessionStorage.setItem('sb_user_email', data.user.email);
+                if (data.user.id) {
+                  sessionStorage.setItem('sb_user_id', data.user.id);
+                }
+              } catch (e) {}
             }
             helpers.setMessage('login-message','Signed in — redirecting...','success');
           setTimeout(() => { window.location.href = 'home.html'; }, 700);
@@ -75,7 +80,12 @@
           }
 
             if (data.user && data.user.email) {
-              try { sessionStorage.setItem('sb_user_email', data.user.email); } catch (e) {}
+              try {
+                sessionStorage.setItem('sb_user_email', data.user.email);
+                if (data.user.id) {
+                  sessionStorage.setItem('sb_user_id', data.user.id);
+                }
+              } catch (e) {}
             }
             helpers.setMessage('signup-message','Account created — taking you to onboarding...','success');
           setTimeout(() => { window.location.href = 'onboarding.html?onboard=true' }, 900);

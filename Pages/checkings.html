@@ -28,7 +28,7 @@
 		<section class="card" style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
 			<div>
 				<div class="muted">Current Balance</div>
-				<div class="large">$1,234.56</div>
+				<div class="large" id="checkings-balance">$0.00</div>
 			</div>
 			<button class="btn" aria-label="Add money">＋</button>
 		</section>
@@ -39,8 +39,8 @@
 					<div class="card-head">
 						<h3>Recent transactions</h3>
 					</div>
-					<ul class="mini-list">
-
+					<ul class="mini-list" id="checkings-transactions">
+						<li class="muted">Loading</li>
 					</ul>
 				</section>
 			</div>
@@ -60,7 +60,7 @@
 	</main>
 
 	<script src="../assets/CSS/JS/main.global.js" defer></script>
-	<script src="../assets/CSS/JS/main.dashboard.js" defer></script>
+	<script src="../assets/CSS/JS/main.checkings.js" defer></script>
 
 </body>
 </html>

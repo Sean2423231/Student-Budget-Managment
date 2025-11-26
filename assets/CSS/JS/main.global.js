@@ -92,7 +92,7 @@ function highlightActiveTab() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Redirect to login if this is a protected page and there's no session user
+  // Redirect to login if not logged in and not on public page
   try {
     const publicPages = ['login.html', 'onboarding.html', 'index.html', ''];
     const raw = window.location.pathname.split('/').pop() || '';

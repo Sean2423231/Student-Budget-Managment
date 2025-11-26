@@ -1,28 +1,35 @@
 const express = require('express');
 const router = express.Router();
+const db = require('../db.js');
 
-// GET /api/chart-data
-// Returns pie chart data. Replace mockData with a real DB query using mysql2 when ready.
+// Returns expense breakdown by category for a specific user
 router.get('/chart-data', async (req, res) => {
   try {
-    // MOCK DATA: categories and amounts
-    const mockData = [
-      { label: 'Rent', value: 650 },
-      { label: 'Food', value: 200 },
-      { label: 'Subscriptions', value: 80 },
-      { label: 'Transport', value: 70 },
-      { label: 'Savings', value: 300 }
-    ];
+    const { userId } = req.query;
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'Missing userId' });
+    }
 
-    // Example: when your SQL server is ready, you can use mysql2 like this:
-    // const mysql = require('mysql2/promise');
-    // const conn = await mysql.createConnection({ host, user, password, database });
-    // const [rows] = await conn.execute('SELECT category, amount FROM expenses');
-    // transform rows into [{label, value}, ...] and return that instead of mockData
+    // Query expense transactions grouped by category 
+    const [rows] = await db.query(
+      `SELECT 
+        COALESCE(category, 'Other') AS label,
+        ABS(SUM(amount)) AS value
+       FROM Transactions
+       WHERE user_id = ? AND amount < 0
+       GROUP BY category
+       ORDER BY value DESC`,
+      [userId]
+    );
 
-    res.json({ ok: true, data: mockData });
+    // If no data, return a helpful message
+    if (!rows || rows.length === 0) {
+      return res.json({ ok: true, data: [], message: 'No expenses found for this user' });
+    }
+
+    res.json({ ok: true, data: rows });
   } catch (err) {
-    console.error(err);
+    console.error('Chart data error:', err);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });

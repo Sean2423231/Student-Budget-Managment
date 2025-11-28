@@ -69,3 +69,5 @@ WHERE u.email = 'test@example.com'
 AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Gas Station')
 LIMIT 1;
 
+INSERT INTO Goals (user_id, goal_name, target_amount, current_amount, target_date)
+VALUES (1, 'Laptop fund', 1000, 820, '2025-12-15');

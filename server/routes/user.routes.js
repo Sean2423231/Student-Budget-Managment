@@ -57,28 +57,46 @@ router.get('/user/overview', async (req, res) => {
     return res.status(400).json({ok: false, error: 'Missing userId'});
   }
   try {
-    //Sum all positive amount  as income
+    // Sum all income (categories with kind='income')
     const [[income]] = await db.query(
-      'SELECT IFNULL(SUM(amount),0) AS totalIncome FROM Transactions WHERE user_id = ? AND amount > 0',[userId]
+      `SELECT IFNULL(SUM(t.amount),0) AS totalIncome 
+       FROM Transactions t
+       JOIN Categories c ON t.category_id = c.category_id
+       WHERE t.user_id = ? AND c.kind = 'income'`, [userId]
     );
-    //Sum all negative amount as expenses
+    
+    // Sum all expenses (categories with kind='expense')
     const [[expenses]] = await db.query(
-      'SELECT IFNULL(SUM(amount),0) AS totalExpense FROM Transactions WHERE user_id = ? AND amount < 0',[userId]
+      `SELECT IFNULL(SUM(t.amount),0) AS totalExpense 
+       FROM Transactions t
+       JOIN Categories c ON t.category_id = c.category_id
+       WHERE t.user_id = ? AND c.kind = 'expense'`, [userId]
     );
-    //Sum all amount as balance
+    
+    // Calculate balance (income - expenses)
     const [[balance]] = await db.query(
-      'SELECT IFNULL(SUM(amount),0) AS balance FROM Transactions WHERE user_id = ?',[userId]
+      `SELECT IFNULL(SUM(CASE WHEN c.kind = 'income' THEN t.amount ELSE -t.amount END), 0) AS balance
+       FROM Transactions t
+       JOIN Categories c ON t.category_id = c.category_id
+       WHERE t.user_id = ?`, [userId]
     );
 
+    // Get upcoming bills (expenses ordered by date)
     const [bills] = await db.query(
-      `SELECT vendor, ABS(amount) AS amount, DATE_FORMAT(date, '%b %e') AS dueDate
-       FROM Transactions WHERE user_id = ? AND amount < 0
-       ORDER BY date ASC LIMIT 5`,[userId]
+      `SELECT t.vendor, t.amount, DATE_FORMAT(t.date, '%b %e') AS dueDate
+       FROM Transactions t
+       JOIN Categories c ON t.category_id = c.category_id
+       WHERE t.user_id = ? AND c.kind = 'expense'
+       ORDER BY t.date ASC LIMIT 5`, [userId]
     );
+    
+    // Get recent transactions
     const [transactions] = await db.query(
-      `SELECT vendor, amount, DATE_FORMAT(date, '%b %e') AS dateLabel
-       FROM Transactions WHERE user_id = ?
-       ORDER BY date DESC LIMIT 6`,[userId]
+      `SELECT t.vendor, t.amount, DATE_FORMAT(t.date, '%b %e') AS dateLabel, c.name AS category
+       FROM Transactions t
+       JOIN Categories c ON t.category_id = c.category_id
+       WHERE t.user_id = ?
+       ORDER BY t.date DESC LIMIT 6`, [userId]
     );
 
 
@@ -86,7 +104,7 @@ router.get('/user/overview', async (req, res) => {
       ok: true,
       data: {
         incomeTotal: Number(income.totalIncome || 0),
-        expenseTotal: Math.abs(Number(expenses.totalExpense || 0)),
+        expenseTotal: Number(expenses.totalExpense || 0),
         balance: Number(balance.balance || 0),
         bills,
         transactions

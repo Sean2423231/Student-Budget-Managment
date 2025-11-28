@@ -1,6 +1,3 @@
--- CREATE DATABASE system_database;
--- USE system_database;
-
 -- USERS TABLE
 CREATE TABLE Users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,

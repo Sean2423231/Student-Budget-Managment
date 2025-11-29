@@ -19,6 +19,7 @@ app.use(express.json());
 app.use('/api', require('./routes/chart.routes'));
 app.use('/api', require('./routes/test.routes'));
 app.use('/api', require('./routes/user.routes'));
+app.use('/api', require('./routes/notifications.routes'));
 
 
 app.get('/', (req, res) => {

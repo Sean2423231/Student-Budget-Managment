@@ -19,13 +19,33 @@ router.get('/notifications', async (req, res) => {
       [userId]
     );
 
-    const notifications = goalRows.map((goal) => ({
-      type: 'goal',
-      title: `${goal.goal_name || 'Goal'} is almost done`,
-      detail: `${Number(goal.current_amount || 0).toFixed(2)} / ${Number(goal.target_amount || 0).toFixed(2)}`,
-      dueDate: goal.target_date,
-      goalId: goal.goal_id
-    }));
+    //Negative transactions (expenses) due within next 5 days
+    //Could add user defined timed reminders in future but for now hardcode it
+    const [paymentRows] = await db.query(
+      `SELECT trans_id, vendor, ABS(amount) AS amount, date
+       FROM Transactions
+       WHERE user_id = ? AND amount < 0 AND date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 5 DAY)
+       ORDER BY date ASC`,
+      [userId]
+    );
+    
+    //Combine and format notifications
+    const notifications = [
+      ...goalRows.map(goal => ({
+        type: 'goal',
+        title: `${goal.goal_name || 'Goal'} is almost done`,
+        detail: `${Number(goal.current_amount || 0).toFixed(2)} / ${Number(goal.target_amount || 0).toFixed(2)}`,
+        dueDate: goal.target_date,
+        goalId: goal.goal_id
+      })),
+      ...paymentRows.map(payment => ({
+        type: 'payment',
+        title: `Payment due: ${payment.vendor}`,
+        detail: `$${Number(payment.amount || 0).toFixed(2)} due soon`,
+        dueDate: payment.date,
+        transId: payment.trans_id
+      }))
+    ];
 
     res.json({ ok: true, notifications });
   } catch (err) {

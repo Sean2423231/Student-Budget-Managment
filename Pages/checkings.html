@@ -62,60 +62,35 @@
 	<script src="../assets/CSS/JS/main.global.js" defer></script>
 	<script src="../assets/CSS/JS/main.dashboard.js" defer></script>
 	<script>
-		// Load checkings/balance data from database
-		async function loadCheckingsData() {
+		// Simple script to update balance display on checkings page
+		document.addEventListener('DOMContentLoaded', async () => {
 			const userId = sessionStorage.getItem('sb_user_id');
-			console.log('Loading checkings for user:', userId);
-			
 			if (!userId) {
-				console.log('No userId in session, redirecting to login');
 				window.location.href = 'login.html';
 				return;
 			}
 
 			try {
-				const url = `/api/user/overview?userId=${userId}`;
-				console.log('Fetching:', url);
-				const res = await fetch(url);
+				const res = await fetch(`/api/user/overview?userId=${userId}`);
 				const json = await res.json();
-				console.log('Response:', json);
 				
 				if (json.ok && json.data) {
 					// Update balance
 					const balanceEl = document.getElementById('balance-display');
 					if (balanceEl) {
-						balanceEl.textContent = '$' + json.data.balance.toFixed(2);
-					}
-
-					// Update transactions list
-					const transactionsEl = document.getElementById('transactions-list');
-					if (transactionsEl && json.data.transactions) {
-						if (json.data.transactions.length === 0) {
-							transactionsEl.innerHTML = '<li class="muted">No transactions yet</li>';
-						} else {
-							transactionsEl.innerHTML = json.data.transactions.map(t => {
-								const amount = typeof t.amount === 'number' ? t.amount : parseFloat(t.amount);
-								return `<li>${t.vendor || 'Transaction'} — <strong>$${amount.toFixed(2)}</strong> <span class="muted">${t.dateLabel}</span></li>`;
-							}).join('');
-						}
+						const balance = typeof json.data.balance === 'number' ? json.data.balance : parseFloat(json.data.balance || 0);
+						balanceEl.textContent = '$' + balance.toFixed(2);
 					}
 				} else {
-					console.error('API error:', json);
-					document.getElementById('balance-display').textContent = 'Error: ' + (json.error || 'Unknown');
+					const balanceEl = document.getElementById('balance-display');
+					if (balanceEl) balanceEl.textContent = '$0.00';
 				}
 			} catch (err) {
-				console.error('Failed to load checkings data:', err);
-				document.getElementById('balance-display').textContent = 'Error loading';
-				document.getElementById('transactions-list').innerHTML = '<li class="muted">Failed to load transactions</li>';
+				console.error('Failed to load balance:', err);
+				const balanceEl = document.getElementById('balance-display');
+				if (balanceEl) balanceEl.textContent = 'Error';
 			}
-		}
-
-		// Wait for DOM and then load data
-		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', loadCheckingsData);
-		} else {
-			loadCheckingsData();
-		}
+		});
 	</script>
 
 </body>

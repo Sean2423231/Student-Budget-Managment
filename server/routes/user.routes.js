@@ -142,4 +142,27 @@ router.get('/user/subscriptions', async (req, res) => {
   }
 });
 
+// GET /api/user/goals - Fetch user's savings goals
+router.get('/user/goals', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ ok: false, error: 'Missing userId' });
+  }
+
+  try {
+    const [goals] = await db.query(
+      `SELECT goal_id, goal_name, target_amount, current_amount, target_date
+       FROM Goals
+       WHERE user_id = ?
+       ORDER BY target_date ASC`,
+      [userId]
+    );
+
+    res.json({ ok: true, goals });
+  } catch (err) {
+    console.error('Goals error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
 module.exports = router;

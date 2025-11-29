@@ -30,7 +30,13 @@
 			</div>
 
 			<div class="card mini">
-				<h4>Notes</h4>
+				<div class="card-head">
+					<h4>Goals</h4>
+					<button class="btn" style="padding:4px 8px; font-size:12px;" onclick="alert('Add goal feature coming soon!')">+</button>
+				</div>
+				<ul class="mini-list" id="goals-list" style="margin-top:8px;">
+					<li class="muted">Loading...</li>
+				</ul>
 			</div>
 		</section>
 
@@ -70,11 +76,55 @@
 			</div>
 		</aside>
 
-		<!-- floating chat bot launcher -->
+		// floating chat bot launcher
 		<button class="chat-btn" aria-label="Open chat bot">🗨</button>
 	</main>
 
 		<script src="../assets/CSS/JS/main.global.js" defer></script>
 		<script src="../assets/CSS/JS/main.dashboard.js" defer></script>
+		<script>
+			// Fetch and display user goals
+			async function loadGoals() {
+				const userId = sessionStorage.getItem('sb_user_id');
+				if (!userId) return;
+
+				try {
+					const res = await fetch(`/api/user/goals?userId=${userId}`);
+					const json = await res.json();
+
+					const goalsList = document.getElementById('goals-list');
+					if (!goalsList) return;
+
+					if (json.ok && json.goals && json.goals.length > 0) {
+						goalsList.innerHTML = json.goals.map(goal => {
+							const current = parseFloat(goal.current_amount || 0);
+							const target = parseFloat(goal.target_amount || 1);
+							const percentage = Math.min(100, (current / target) * 100);
+							return `
+								<li style="padding:10px 0; border-bottom:1px dashed #f1f5f9;">
+									<div style="margin-bottom:4px;">
+										<strong>${goal.goal_name}</strong>
+										<span class="muted" style="float:right;">$${current.toFixed(0)} / $${target.toFixed(0)}</span>
+									</div>
+									<div style="background:#f1f5f9; height:6px; border-radius:3px; overflow:hidden;">
+										<div style="background:var(--primary); height:100%; width:${percentage}%; transition:width 0.3s;"></div>
+									</div>
+								</li>
+							`;
+						}).join('');
+					} else {
+						goalsList.innerHTML = '<li class="muted" style="padding:10px 0;">No goals yet. Create one to start saving!</li>';
+					}
+				} catch (err) {
+					console.error('Failed to load goals:', err);
+					const goalsList = document.getElementById('goals-list');
+					if (goalsList) goalsList.innerHTML = '<li class="muted">Error loading goals</li>';
+				}
+			}
+
+			// Load goals
+			document.addEventListener('DOMContentLoaded', loadGoals);
+			document.addEventListener('includesLoaded', loadGoals);
+		</script>
 </body>
 </html>

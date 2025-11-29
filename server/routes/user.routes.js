@@ -125,7 +125,8 @@ router.get('/user/subscriptions', async (req, res) => {
 
   try {
     const [subs] = await db.query(
-      `SELECT s.sub_name AS name,
+      `SELECT s.sub_id AS id,
+              s.sub_name AS name,
               s.price AS amount,
               COALESCE(DAY(s.next_renewal), 1) AS day,
               s.frequency
@@ -138,6 +139,81 @@ router.get('/user/subscriptions', async (req, res) => {
     res.json({ ok: true, subscriptions: subs });
   } catch (err) {
     console.error('Subscriptions error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+//Add a new subscription
+router.post('/user/subscriptions/add', async (req, res) => {
+  const { userId, name, price, day, frequency } = req.body;
+  
+  if (!userId || !name || !price || !day) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
+  }
+
+  try {
+    // Calculate next renewal date based on day of month
+    const today = new Date();
+    const currentDay = today.getDate();
+    let nextRenewal = new Date(today.getFullYear(), today.getMonth(), day);
+    
+    // If the day has already passed this month, set it for next month
+    if (day < currentDay) {
+      nextRenewal = new Date(today.getFullYear(), today.getMonth() + 1, day);
+    }
+
+    // Insert into Subscriptions table
+    const [result] = await db.query(
+      `INSERT INTO Subscriptions (sub_name, price, frequency, date_created, next_renewal)
+       VALUES (?, ?, ?, CURDATE(), ?)`,
+      [name, price, frequency || 'monthly', nextRenewal]
+    );
+
+    const subId = result.insertId;
+
+    // Link to user in User_Subscription table
+    await db.query(
+      `INSERT INTO User_Subscription (user_id, sub_id, active)
+       VALUES (?, ?, TRUE)`,
+      [userId, subId]
+    );
+
+    res.json({ 
+      ok: true, 
+      subscription: { 
+        id: subId, 
+        name, 
+        amount: parseFloat(price), 
+        day: parseInt(day),
+        frequency: frequency || 'monthly'
+      } 
+    });
+  } catch (err) {
+    console.error('Add subscription error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+// DELETE /api/user/subscriptions/delete - Delete a subscription
+router.delete('/user/subscriptions/delete', async (req, res) => {
+  const { userId, subId } = req.body;
+  
+  if (!userId || !subId) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
+  }
+
+  try {
+    // Set subscription to inactive instead of deleting
+    await db.query(
+      `UPDATE User_Subscription 
+       SET active = 0 
+       WHERE user_id = ? AND sub_id = ?`,
+      [userId, subId]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Delete subscription error:', err);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });

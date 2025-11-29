@@ -1,71 +1,72 @@
---create database, users table (if missing) and insert a test user
+-- Was making a 'student_budget' database for testing, but now using 'system_database' for all users
+USE system_database;
 
-CREATE DATABASE IF NOT EXISTS `student_budget` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `student_budget`;
-
--- Create a Users table 
-CREATE TABLE IF NOT EXISTS `Users` (
-  `user_id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(150) DEFAULT NULL,
-  `email` VARCHAR(200) NOT NULL UNIQUE,
-  `password` VARCHAR(255) NOT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Insert a test user
+-- Ensure test user exists
 INSERT INTO Users (name, email, password)
 SELECT 'Test User', 'test@example.com', 'test123'
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Users WHERE email = 'test@example.com')
-LIMIT 1;
+WHERE NOT EXISTS (SELECT 1 FROM Users WHERE email = 'test@example.com');
 
--- Create Transactions table
-CREATE TABLE IF NOT EXISTS `Transactions` (
-  `transaction_id` INT AUTO_INCREMENT PRIMARY KEY,
-  `user_id` INT NOT NULL,
-  `vendor` VARCHAR(255) NOT NULL,
-  `amount` DECIMAL(10, 2) NOT NULL,
-  `category` VARCHAR(100) DEFAULT NULL,
-  `date` DATE DEFAULT CURDATE(),
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`user_id`) REFERENCES Users(`user_id`) ON DELETE CASCADE,
-  INDEX (`user_id`),
-  INDEX (`date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Get that user_id
+SET @uid = (SELECT user_id FROM Users WHERE email = 'test@example.com');
 
--- Insert sample transactions for the test user
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Rent Payment', -650.00, 'Housing', CURDATE() - INTERVAL 5 DAY
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Rent Payment')
-LIMIT 1;
+-- Make sure categories exist for this user
+INSERT INTO Categories (user_id, name, kind)
+SELECT @uid, 'General Income', 'income'
+WHERE NOT EXISTS ( SELECT 1 FROM Categories 
+  WHERE user_id = @uid 
+  AND name = 'General Income' AND kind = 'income'
+);
 
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Salary Deposit', 2500.00, 'Income', CURDATE() - INTERVAL 2 DAY
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Salary Deposit')
-LIMIT 1;
+INSERT INTO Categories (user_id, name, kind)
+SELECT @uid, 'Utilities', 'expense'
+WHERE NOT EXISTS (
+  SELECT 1 FROM Categories
+  WHERE user_id = @uid AND name = 'Utilities' AND kind = 'expense'
+);
 
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Grocery Store', -85.50, 'Food', CURDATE() - INTERVAL 1 DAY
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Grocery Store')
-LIMIT 1;
+-- Look up category_ids
+SET @cat_income = (
+  SELECT category_id FROM Categories
+  WHERE user_id = @uid AND name = 'General Income' AND kind = 'income'
+  LIMIT 1
+);
 
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Netflix', -12.99, 'Subscriptions', CURDATE()
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Netflix')
-LIMIT 1;
+SET @cat_util = (
+  SELECT category_id FROM Categories
+  WHERE user_id = @uid AND name = 'Utilities' AND kind = 'expense'
+  LIMIT 1
+);
 
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Gas Station', -45.00, 'Transport', CURDATE()
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Gas Station')
-LIMIT 1;
+-- Income
+INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
+SELECT @uid, @cat_income, 2500.00, CURDATE() - INTERVAL 2 DAY, 'Salary Deposit'
+WHERE NOT EXISTS (
+  SELECT 1 FROM Transactions
+  WHERE user_id = @uid AND vendor = 'Salary Deposit'
+);
 
+-- Past expense
+INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
+SELECT @uid, @cat_util, -650.00, CURDATE() - INTERVAL 5 DAY, 'Rent Payment'
+WHERE NOT EXISTS (
+  SELECT 1 FROM Transactions
+  WHERE user_id = @uid AND vendor = 'Rent Payment'
+);
+
+-- lastest addition for notifications:
+
+-- Upcoming bill (next 5 days) 
+INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
+SELECT @uid, @cat_util, -150.00, CURDATE() + INTERVAL 2 DAY, 'Utility Bill'
+WHERE NOT EXISTS (
+  SELECT 1 FROM Transactions
+  WHERE user_id = @uid AND vendor = 'Utility Bill'
+);
+
+-- A goal near completion
+INSERT INTO Goals (user_id, goal_name, target_amount, current_amount, target_date)
+SELECT @uid, 'Laptop fund', 1000.00, 820.00, CURDATE() + INTERVAL 10 DAY
+WHERE NOT EXISTS (
+  SELECT 1 FROM Goals
+  WHERE user_id = @uid AND goal_name = 'Laptop fund'
+);

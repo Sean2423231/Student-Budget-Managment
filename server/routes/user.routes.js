@@ -57,28 +57,60 @@ router.get('/user/overview', async (req, res) => {
     return res.status(400).json({ok: false, error: 'Missing userId'});
   }
   try {
-    //Sum all positive amount  as income
+    // Sum all income
     const [[income]] = await db.query(
-      'SELECT IFNULL(SUM(amount),0) AS totalIncome FROM Transactions WHERE user_id = ? AND amount > 0',[userId]
+      `SELECT IFNULL(SUM(t.amount),0) AS totalIncome 
+       FROM Transactions t, Categories c
+       WHERE t.category_id = c.category_id
+       AND t.user_id = ? AND c.kind = 'income'`, [userId]
     );
-    //Sum all negative amount as expenses
+    
+    // Sum all expenses
     const [[expenses]] = await db.query(
-      'SELECT IFNULL(SUM(amount),0) AS totalExpense FROM Transactions WHERE user_id = ? AND amount < 0',[userId]
+      `SELECT IFNULL(SUM(t.amount),0) AS totalExpense 
+       FROM Transactions t, Categories c
+       WHERE t.category_id = c.category_id
+       AND t.user_id = ? AND c.kind = 'expense'`, [userId]
     );
-    //Sum all amount as balance
+    
+    // Calculate balance
     const [[balance]] = await db.query(
-      'SELECT IFNULL(SUM(amount),0) AS balance FROM Transactions WHERE user_id = ?',[userId]
+      `SELECT IFNULL(SUM(CASE WHEN c.kind = 'income' THEN t.amount ELSE -t.amount END), 0) AS balance
+       FROM Transactions t, Categories c
+       WHERE t.category_id = c.category_id
+       AND t.user_id = ?`, [userId]
     );
 
-    const [bills] = await db.query(
-      `SELECT vendor, ABS(amount) AS amount, DATE_FORMAT(date, '%b %e') AS dueDate
-       FROM Transactions WHERE user_id = ? AND amount < 0
-       ORDER BY date ASC LIMIT 5`,[userId]
+    // Get upcoming bills from transactions
+    const [transactionBills] = await db.query(
+      `SELECT t.vendor, t.amount, DATE_FORMAT(t.date, '%b %e') AS dueDate
+       FROM Transactions t, Categories c
+       WHERE t.category_id = c.category_id
+       AND t.user_id = ? AND c.kind = 'expense'
+       ORDER BY t.date ASC LIMIT 5`, [userId]
     );
+
+    // Get upcoming bills from subscriptions
+    const [subscriptionBills] = await db.query(
+      `SELECT s.sub_name AS vendor, 
+              s.price AS amount,
+              DATE_FORMAT(s.next_renewal, '%b %e') AS dueDate
+       FROM User_Subscription us, Subscriptions s
+       WHERE us.sub_id = s.sub_id
+       AND us.user_id = ? AND us.active = 1
+       ORDER BY s.next_renewal ASC LIMIT 5`, [userId]
+    );
+
+    // Combine both sources
+    const allBills = [...transactionBills, ...subscriptionBills].slice(0, 5);
+    
+    // Get recent transactions
     const [transactions] = await db.query(
-      `SELECT vendor, amount, DATE_FORMAT(date, '%b %e') AS dateLabel
-       FROM Transactions WHERE user_id = ?
-       ORDER BY date DESC LIMIT 6`,[userId]
+      `SELECT t.vendor, t.amount, DATE_FORMAT(t.date, '%b %e') AS dateLabel, c.name AS category
+       FROM Transactions t, Categories c
+       WHERE t.category_id = c.category_id
+       AND t.user_id = ?
+       ORDER BY t.date DESC LIMIT 6`, [userId]
     );
 
 
@@ -86,9 +118,9 @@ router.get('/user/overview', async (req, res) => {
       ok: true,
       data: {
         incomeTotal: Number(income.totalIncome || 0),
-        expenseTotal: Math.abs(Number(expenses.totalExpense || 0)),
+        expenseTotal: Number(expenses.totalExpense || 0),
         balance: Number(balance.balance || 0),
-        bills,
+        bills: allBills,
         transactions
       }
     });
@@ -107,19 +139,163 @@ router.get('/user/subscriptions', async (req, res) => {
 
   try {
     const [subs] = await db.query(
-      `SELECT s.sub_name AS name,
+      `SELECT s.sub_id AS id,
+              s.sub_name AS name,
               s.price AS amount,
               COALESCE(DAY(s.next_renewal), 1) AS day,
               s.frequency
-       FROM User_Subscription us
-       JOIN Subscriptions s ON s.sub_id = us.sub_id
-       WHERE us.user_id = ? AND us.active = 1
+       FROM User_Subscription us, Subscriptions s
+       WHERE us.sub_id = s.sub_id
+       AND us.user_id = ? AND us.active = 1
        ORDER BY day ASC`, [userId]
     );
 
     res.json({ ok: true, subscriptions: subs });
   } catch (err) {
     console.error('Subscriptions error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+//Add a new subscription
+router.post('/user/subscriptions/add', async (req, res) => {
+  const { userId, name, price, day, frequency } = req.body;
+  
+  if (!userId || !name || !price || !day) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
+  }
+
+  try {
+    // Calculate next renewal date based on day of month
+    const today = new Date();
+    const currentDay = today.getDate();
+    let nextRenewal = new Date(today.getFullYear(), today.getMonth(), day);
+    
+    if (day < currentDay) {
+      nextRenewal = new Date(today.getFullYear(), today.getMonth() + 1, day);
+    }
+
+    // Insert into Subscriptions table
+    const [result] = await db.query(
+      `INSERT INTO Subscriptions (sub_name, price, frequency, date_created, next_renewal)
+       VALUES (?, ?, ?, CURDATE(), ?)`,
+      [name, price, frequency || 'monthly', nextRenewal]
+    );
+
+    const subId = result.insertId;
+
+    // Link to user in User_Subscription table
+    await db.query(
+      `INSERT INTO User_Subscription (user_id, sub_id, active)
+       VALUES (?, ?, TRUE)`,
+      [userId, subId]
+    );
+
+    res.json({ 
+      ok: true, 
+      subscription: { 
+        id: subId, 
+        name, 
+        amount: parseFloat(price), 
+        day: parseInt(day),
+        frequency: frequency || 'monthly'
+      } 
+    });
+  } catch (err) {
+    console.error('Add subscription error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+//Delete a subscription
+router.delete('/user/subscriptions/delete', async (req, res) => {
+  const { userId, subId } = req.body;
+  
+  if (!userId || !subId) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
+  }
+
+  try {
+    // Set subscription to inactive instead of deleting
+    await db.query(
+      `UPDATE User_Subscription 
+       SET active = 0 
+       WHERE user_id = ? AND sub_id = ?`,
+      [userId, subId]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Delete subscription error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+//Fetch user's savings goals
+router.get('/user/goals', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ ok: false, error: 'Missing userId' });
+  }
+
+  try {
+    const [goals] = await db.query(
+      `SELECT goal_id, goal_name, target_amount, current_amount, target_date
+       FROM Goals
+       WHERE user_id = ?
+       ORDER BY target_date ASC`,
+      [userId]
+    );
+
+    res.json({ ok: true, goals });
+  } catch (err) {
+    console.error('Goals error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+// POST /api/user/transactions/add - Add a new transaction
+router.post('/user/transactions/add', async (req, res) => {
+  const { userId, vendor, amount, date, type } = req.body;
+  
+  if (!userId || !vendor || !amount || !date || !type) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
+  }
+
+  try {
+    // Get the appropriate category_id based on type
+    // For income, use category_id 1 (or first income category)
+    // For expense, use category_id 2 (or first expense category)
+    const [categories] = await db.query(
+      `SELECT category_id FROM Categories WHERE kind = ? LIMIT 1`,
+      [type]
+    );
+
+    if (categories.length === 0) {
+      return res.status(400).json({ ok: false, error: 'No category found for transaction type' });
+    }
+
+    const categoryId = categories[0].category_id;
+
+    // Insert transaction
+    const [result] = await db.query(
+      `INSERT INTO Transactions (user_id, vendor, amount, date, category_id)
+       VALUES (?, ?, ?, ?, ?)`,
+      [userId, vendor, amount, date, categoryId]
+    );
+
+    res.json({ 
+      ok: true, 
+      transaction: { 
+        id: result.insertId, 
+        vendor, 
+        amount: parseFloat(amount),
+        date,
+        type
+      } 
+    });
+  } catch (err) {
+    console.error('Add transaction error:', err);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });

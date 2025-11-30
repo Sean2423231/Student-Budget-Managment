@@ -1,16 +1,4 @@
---create database, users table (if missing) and insert a test user
-
-CREATE DATABASE IF NOT EXISTS `student_budget` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `student_budget`;
-
--- Create a Users table 
-CREATE TABLE IF NOT EXISTS `Users` (
-  `user_id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(150) DEFAULT NULL,
-  `email` VARCHAR(200) NOT NULL UNIQUE,
-  `password` VARCHAR(255) NOT NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert a test user
 INSERT INTO Users (name, email, password)
@@ -19,53 +7,122 @@ FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM Users WHERE email = 'test@example.com')
 LIMIT 1;
 
--- Create Transactions table
-CREATE TABLE IF NOT EXISTS `Transactions` (
-  `transaction_id` INT AUTO_INCREMENT PRIMARY KEY,
-  `user_id` INT NOT NULL,
-  `vendor` VARCHAR(255) NOT NULL,
-  `amount` DECIMAL(10, 2) NOT NULL,
-  `category` VARCHAR(100) DEFAULT NULL,
-  `date` DATE DEFAULT CURDATE(),
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`user_id`) REFERENCES Users(`user_id`) ON DELETE CASCADE,
-  INDEX (`user_id`),
-  INDEX (`date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Get the test user's ID
+SET @test_user_id = (SELECT user_id FROM Users WHERE email = 'test@example.com' LIMIT 1);
 
--- Insert sample transactions for the test user
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Rent Payment', -650.00, 'Housing', CURDATE() - INTERVAL 5 DAY
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Rent Payment')
+-- Insert categories for the test user
+INSERT INTO Categories (user_id, name, kind)
+SELECT @test_user_id, 'Rent', 'expense'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Categories WHERE user_id = @test_user_id AND name = 'Rent')
 LIMIT 1;
 
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Salary Deposit', 2500.00, 'Income', CURDATE() - INTERVAL 2 DAY
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Salary Deposit')
+INSERT INTO Categories (user_id, name, kind)
+SELECT @test_user_id, 'Food', 'expense'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Categories WHERE user_id = @test_user_id AND name = 'Food')
 LIMIT 1;
 
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Grocery Store', -85.50, 'Food', CURDATE() - INTERVAL 1 DAY
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Grocery Store')
+INSERT INTO Categories (user_id, name, kind)
+SELECT @test_user_id, 'Transport', 'expense'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Categories WHERE user_id = @test_user_id AND name = 'Transport')
 LIMIT 1;
 
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Netflix', -12.99, 'Subscriptions', CURDATE()
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Netflix')
+INSERT INTO Categories (user_id, name, kind)
+SELECT @test_user_id, 'Subscriptions', 'expense'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Categories WHERE user_id = @test_user_id AND name = 'Subscriptions')
 LIMIT 1;
 
-INSERT INTO Transactions (user_id, vendor, amount, category, date)
-SELECT u.user_id, 'Gas Station', -45.00, 'Transport', CURDATE()
-FROM Users u
-WHERE u.email = 'test@example.com'
-AND NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = u.user_id AND vendor = 'Gas Station')
+INSERT INTO Categories (user_id, name, kind)
+SELECT @test_user_id, 'Salary', 'income'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Categories WHERE user_id = @test_user_id AND name = 'Salary')
+LIMIT 1;
+
+-- Get category IDs
+SET @cat_rent = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Rent' LIMIT 1);
+SET @cat_food = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Food' LIMIT 1);
+SET @cat_transport = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Transport' LIMIT 1);
+SET @cat_subscriptions = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Subscriptions' LIMIT 1);
+SET @cat_salary = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Salary' LIMIT 1);
+
+-- Insert sample transactions
+INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
+SELECT @test_user_id, @cat_rent, 650.00, CURDATE() - INTERVAL 5 DAY, 'Rent Payment'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Rent Payment')
+LIMIT 1;
+
+INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
+SELECT @test_user_id, @cat_salary, 2500.00, CURDATE() - INTERVAL 2 DAY, 'Salary Deposit'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Salary Deposit')
+LIMIT 1;
+
+INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
+SELECT @test_user_id, @cat_food, 85.50, CURDATE() - INTERVAL 1 DAY, 'Grocery Store'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Grocery Store')
+LIMIT 1;
+
+INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
+SELECT @test_user_id, @cat_subscriptions, 12.99, CURDATE(), 'Netflix'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Netflix')
+LIMIT 1;
+
+INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
+SELECT @test_user_id, @cat_transport, 45.00, CURDATE(), 'Gas Station'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Gas Station')
+LIMIT 1;
+
+-- Insert sample subscriptions
+INSERT INTO Subscriptions (sub_name, price, frequency, date_created, next_renewal)
+SELECT 'Netflix', 12.99, 'monthly', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Subscriptions WHERE sub_name = 'Netflix')
+LIMIT 1;
+
+INSERT INTO Subscriptions (sub_name, price, frequency, date_created, next_renewal)
+SELECT 'Spotify', 9.99, 'monthly', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Subscriptions WHERE sub_name = 'Spotify')
+LIMIT 1;
+
+-- Link subscriptions to test user
+INSERT INTO User_Subscription (user_id, sub_id, active)
+SELECT @test_user_id, s.sub_id, TRUE
+FROM Subscriptions s
+WHERE s.sub_name = 'Netflix'
+AND NOT EXISTS (SELECT 1 FROM User_Subscription WHERE user_id = @test_user_id AND sub_id = s.sub_id)
+LIMIT 1;
+
+INSERT INTO User_Subscription (user_id, sub_id, active)
+SELECT @test_user_id, s.sub_id, TRUE
+FROM Subscriptions s
+WHERE s.sub_name = 'Spotify'
+AND NOT EXISTS (SELECT 1 FROM User_Subscription WHERE user_id = @test_user_id AND sub_id = s.sub_id)
+LIMIT 1;
+
+-- Insert sample goals for the test user
+INSERT INTO Goals (user_id, goal_name, target_amount, current_amount, target_date)
+SELECT @test_user_id, 'Emergency Fund', 1000.00, 750.00, DATE_ADD(CURDATE(), INTERVAL 3 MONTH)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Goals WHERE user_id = @test_user_id AND goal_name = 'Emergency Fund')
+LIMIT 1;
+
+INSERT INTO Goals (user_id, goal_name, target_amount, current_amount, target_date)
+SELECT @test_user_id, 'New Laptop', 1500.00, 450.00, DATE_ADD(CURDATE(), INTERVAL 6 MONTH)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Goals WHERE user_id = @test_user_id AND goal_name = 'New Laptop')
+LIMIT 1;
+
+INSERT INTO Goals (user_id, goal_name, target_amount, current_amount, target_date)
+SELECT @test_user_id, 'Vacation Fund', 2000.00, 200.00, DATE_ADD(CURDATE(), INTERVAL 9 MONTH)
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM Goals WHERE user_id = @test_user_id AND goal_name = 'Vacation Fund')
 LIMIT 1;
 

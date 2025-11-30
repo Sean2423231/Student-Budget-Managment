@@ -52,7 +52,8 @@ async function loadHtmlIncludes() {
     signButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         try { sessionStorage.removeItem('sb_user_email'); } catch (e) {}
-        window.location.href = 'login.html';
+        try { sessionStorage.removeItem('sb_user_id'); } catch (e) {}
+        window.location.href = 'main.html';
       });
     });
   } catch (e) { /* ignore */ }

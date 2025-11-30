@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Chart — Student Budget</title>
+    <title>Chart — FiDough</title>
     <link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
     <style>
 
@@ -23,8 +23,24 @@
     </style>
   </head>
   <body>
-    <h1>Spending Breakdown</h1>
-    <div id="chart-root"></div>
+    <header class="dash-header">
+      <div class="container topbar">
+        <h1 class="app-title">FiDough</h1>
+        <div class="header-actions">
+          <button class="btn">Placeholder</button>
+          <button id="sign-out" class="btn">Sign out</button>
+        </div>
+      </div>
+      <!-- top tab bar-->
+      <div class="tab-bar container" role="tablist" aria-label="Main sections">
+        <div data-include="../assets/includes/topbar.html"></div>
+      </div>
+    </header>
+
+    <main class="container">
+      <h2>Spending Breakdown</h2>
+      <div id="chart-root"></div>
+    </main>
 
     <!-- React-->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -132,6 +148,21 @@
       ReactDOM.createRoot(document.getElementById("chart-root")).render(
         e(ChartApp)
       );
+    </script>
+
+    <script src="../assets/CSS/JS/main.global.js" defer></script>
+    <script>
+      // Sign out functionality
+      document.addEventListener('DOMContentLoaded', function() {
+        const signOutBtn = document.getElementById('sign-out');
+        if (signOutBtn) {
+          signOutBtn.onclick = function() {
+            sessionStorage.removeItem('sb_user_email');
+            sessionStorage.removeItem('sb_user_id');
+            window.location.href = 'main.html';
+          };
+        }
+      });
     </script>
   </body>
 </html>

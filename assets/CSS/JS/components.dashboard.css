@@ -1,5 +1,4 @@
 /* Dashboard-specific styles (home.html) */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding-top:6px;padding-bottom:6px}
 .dashboard-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;padding:18px 0}
 .left-col,.right-col{display:flex;flex-direction:column;gap:12px}
 .card{background:var(--card);padding:16px;border-radius:12px;border:1px solid #eef2f6;box-shadow:0 6px 18px rgba(31,41,55,0.04)}

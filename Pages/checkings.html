@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>Checkings — Student Budget</title>
+	<title>Checkings — FiDough</title>
 	<link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
 	<link rel="stylesheet" href="../assets/CSS/JS/components.dashboard.css" />
 
@@ -11,13 +11,13 @@
 <body>
 	<header class="dash-header">
 		<div class="container topbar">
-			<h1 class="app-title">Student Budget</h1>
+			<h1 class="app-title">FiDough</h1>
 			<div class="header-actions">
 				<button class="btn">Placeholder</button>
 				<button id="sign-out" class="btn">Sign out</button>
 			</div>
 		</div>
-
+		<!-- top tab bar-->
 		<div class="tab-bar container" role="tablist" aria-label="Main sections">
 			<div data-include="../assets/includes/topbar.html"></div>
 		</div>
@@ -28,10 +28,39 @@
 		<section class="card" style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
 			<div>
 				<div class="muted">Current Balance</div>
-				<div class="large" id="checkings-balance">$0.00</div>
+				<div class="large" id="balance-display">Loading...</div>
 			</div>
-			<button class="btn" aria-label="Add money">＋</button>
+			<button class="btn" id="add-transaction-btn" aria-label="Add transaction">＋</button>
 		</section>
+
+		<div id="make_transaction" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+			<div style="background:white; padding:24px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+				<h3 style="margin-top:0;">Add Transaction</h3>
+				<div style="margin-bottom:16px;">
+					<label style="display:block; margin-bottom:4px; font-size:14px; font-weight:500;">Transaction Name</label>
+					<input type="text" id="transaction-name" placeholder="e.g., Salary, Groceries" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px;">
+				</div>
+				<div style="margin-bottom:16px;">
+					<label style="display:block; margin-bottom:4px; font-size:14px; font-weight:500;">Type</label>
+					<select id="transaction-type" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px;">
+						<option value="income">Income (+)</option>
+						<option value="expense">Expense (-)</option>
+					</select>
+				</div>
+				<div style="margin-bottom:16px;">
+					<label style="display:block; margin-bottom:4px; font-size:14px; font-weight:500;">Amount</label>
+					<input type="number" id="transaction-amount" placeholder="0.00" step="0.01" min="0" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px;">
+				</div>
+				<div style="margin-bottom:16px;">
+					<label style="display:block; margin-bottom:4px; font-size:14px; font-weight:500;">Date</label>
+					<input type="date" id="transaction-date" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px;">
+				</div>
+				<div style="display:flex; gap:8px; justify-content:flex-end;">
+					<button class="btn" id="cancel-transaction" style="background:#e5e7eb; color:#374151;">Cancel</button>
+					<button class="btn primary" id="save-transaction">Save</button>
+				</div>
+			</div>
+		</div>
 
 		<div class="dashboard-grid">
 			<div class="left-col">
@@ -39,8 +68,8 @@
 					<div class="card-head">
 						<h3>Recent transactions</h3>
 					</div>
-					<ul class="mini-list" id="checkings-transactions">
-						<li class="muted">Loading</li>
+					<ul class="mini-list" id="transactions-list">
+						<li class="muted">Loading...</li>
 					</ul>
 				</section>
 			</div>
@@ -60,7 +89,120 @@
 	</main>
 
 	<script src="../assets/CSS/JS/main.global.js" defer></script>
-	<script src="../assets/CSS/JS/main.checkings.js" defer></script>
+	<script src="../assets/CSS/JS/main.dashboard.js" defer></script>
+	<script>
+		// Simple script to update balance display on checkings page
+		document.addEventListener('DOMContentLoaded', async () => {
+			const userId = sessionStorage.getItem('sb_user_id');
+			if (!userId) {
+				window.location.href = 'login.html';
+				return;
+			}
+
+			// Load balance
+			async function loadBalance() {
+				try {
+					const res = await fetch(`/api/user/overview?userId=${userId}`);
+					const json = await res.json();
+					
+					if (json.ok && json.data) {
+						// Update balance
+						const balanceEl = document.getElementById('balance-display');
+						if (balanceEl) {
+							const balance = typeof json.data.balance === 'number' ? json.data.balance : parseFloat(json.data.balance || 0);
+							balanceEl.textContent = '$' + balance.toFixed(2);
+						}
+					} else {
+						const balanceEl = document.getElementById('balance-display');
+						if (balanceEl) balanceEl.textContent = '$0.00';
+					}
+				} catch (err) {
+					console.error('Failed to load balance:', err);
+					const balanceEl = document.getElementById('balance-display');
+					if (balanceEl) balanceEl.textContent = 'Error';
+				}
+			}
+
+			loadBalance();
+
+			// Modal functionality
+			const modal = document.getElementById('make_transaction');
+			const addBtn = document.getElementById('add-transaction-btn');
+			const cancelBtn = document.getElementById('cancel-transaction');
+			const saveBtn = document.getElementById('save-transaction');
+			const dateInput = document.getElementById('transaction-date');
+
+			// Set default date to today
+			const today = new Date().toISOString().split('T')[0];
+			dateInput.value = today;
+
+			// Open modal
+			addBtn.addEventListener('click', () => {
+				modal.style.display = 'flex';
+			});
+
+			// Close modal
+			cancelBtn.addEventListener('click', () => {
+				modal.style.display = 'none';
+				// Clear form
+				document.getElementById('transaction-name').value = '';
+				document.getElementById('transaction-amount').value = '';
+				document.getElementById('transaction-type').value = 'income';
+				dateInput.value = today;
+			});
+
+			// Close modal on background click
+			modal.addEventListener('click', (e) => {
+				if (e.target === modal) {
+					cancelBtn.click();
+				}
+			});
+
+			// Save transaction
+			saveBtn.addEventListener('click', async () => {
+				const name = document.getElementById('transaction-name').value.trim();
+				const type = document.getElementById('transaction-type').value;
+				const amount = parseFloat(document.getElementById('transaction-amount').value);
+				const date = document.getElementById('transaction-date').value;
+
+				if (!name || !amount || amount <= 0 || !date) {
+					alert('Please fill in all fields with valid values');
+					return;
+				}
+
+				try {
+					const response = await fetch('/api/user/transactions/add', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							userId: parseInt(userId),
+							vendor: name,
+							amount: amount,
+							date: date,
+							type: type
+						})
+					});
+
+					const data = await response.json();
+					if (data.ok) {
+						// Reload balance and transactions
+						await loadBalance();
+						
+						// Close modal and clear form
+						cancelBtn.click();
+						
+						// Reload page to show new transaction
+						window.location.reload();
+					} else {
+						alert('Error adding transaction: ' + (data.error || 'Unknown error'));
+					}
+				} catch (err) {
+					console.error('Add transaction error:', err);
+					alert('Failed to add transaction');
+				}
+			});
+		});
+	</script>
 
 </body>
 </html>

@@ -39,6 +39,7 @@ body{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);col
 }
 
 /* Header */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding-top:6px;padding-bottom:6px}
 .dash-header .header-actions{display:flex;gap:8px}
 .dash-header .header-actions button a{color:inherit;text-decoration:none}
 .dash-header .container{position:relative}

@@ -264,8 +264,6 @@ router.post('/user/transactions/add', async (req, res) => {
 
   try {
     // Get the appropriate category_id based on type
-    // For income, use category_id 1 (or first income category)
-    // For expense, use category_id 2 (or first expense category)
     const [categories] = await db.query(
       `SELECT category_id FROM Categories WHERE kind = ? LIMIT 1`,
       [type]
@@ -296,6 +294,37 @@ router.post('/user/transactions/add', async (req, res) => {
     });
   } catch (err) {
     console.error('Add transaction error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+// Add a new goal
+router.post('/user/goals/add', async (req, res) => {
+  const { userId, goalName, targetAmount, currentAmount, targetDate } = req.body;
+  
+  if (!userId || !goalName || !targetAmount) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
+  }
+
+  try {
+    const [result] = await db.query(
+      `INSERT INTO Goals (user_id, goal_name, target_amount, current_amount, target_date)
+       VALUES (?, ?, ?, ?, ?)`,
+      [userId, goalName, targetAmount, currentAmount || 0, targetDate || null]
+    );
+
+    res.json({ 
+      ok: true, 
+      goal: { 
+        id: result.insertId, 
+        goalName, 
+        targetAmount: parseFloat(targetAmount),
+        currentAmount: parseFloat(currentAmount) || 0,
+        targetDate
+      } 
+    });
+  } catch (err) {
+    console.error('Add goal error:', err);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });

@@ -32,7 +32,7 @@
 			<div class="card mini">
 				<div class="card-head">
 					<h4>Goals</h4>
-					<button class="btn" style="padding:4px 8px; font-size:12px;" onclick="alert('Add goal feature coming soon!')">+</button>
+					<button class="btn" id="add-goal-btn" style="padding:4px 8px; font-size:12px;">+</button>
 				</div>
 				<ul class="mini-list" id="goals-list" style="margin-top:8px;">
 					<li class="muted">Loading...</li>
@@ -77,6 +77,32 @@
 		</aside>
 
 	</main>
+
+	<div id="add_goal_tab" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+		<div style="background:white; padding:24px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+			<h3 style="margin-top:0;">Add New Goal</h3>
+			<div style="margin-bottom:16px;">
+				<label style="display:block; margin-bottom:4px; font-size:14px; font-weight:500;">Goal Name</label>
+				<input type="text" id="goal-name" placeholder="e.g., New Laptop, Vacation" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px;">
+			</div>
+			<div style="margin-bottom:16px;">
+				<label style="display:block; margin-bottom:4px; font-size:14px; font-weight:500;">Target Amount</label>
+				<input type="number" id="goal-target" placeholder="0.00" step="0.01" min="0" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px;">
+			</div>
+			<div style="margin-bottom:16px;">
+				<label style="display:block; margin-bottom:4px; font-size:14px; font-weight:500;">Current Amount (optional)</label>
+				<input type="number" id="goal-current" placeholder="0.00" step="0.01" min="0" value="0" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px;">
+			</div>
+			<div style="margin-bottom:16px;">
+				<label style="display:block; margin-bottom:4px; font-size:14px; font-weight:500;">Target Date (optional)</label>
+				<input type="date" id="goal-date" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:6px; font-size:14px;">
+			</div>
+			<div style="display:flex; gap:8px; justify-content:flex-end;">
+				<button class="btn" id="cancel-goal" style="background:#e5e7eb; color:#374151;">Cancel</button>
+				<button class="btn primary" id="save-goal">Save</button>
+			</div>
+		</div>
+	</div>
 
 		<script src="../assets/CSS/JS/main.global.js" defer></script>
 		<script src="../assets/CSS/JS/main.dashboard.js" defer></script>
@@ -123,6 +149,88 @@
 			// Load goals
 			document.addEventListener('DOMContentLoaded', loadGoals);
 			document.addEventListener('includesLoaded', loadGoals);
+
+			// Tab functionality for adding goals
+			document.addEventListener('DOMContentLoaded', () => {
+				const modal = document.getElementById('add_goal_tab');
+				const addBtn = document.getElementById('add-goal-btn');
+				const cancelBtn = document.getElementById('cancel-goal');
+				const saveBtn = document.getElementById('save-goal');
+
+				if (!addBtn || !modal) return;
+
+				// Open tab
+				addBtn.addEventListener('click', () => {
+					modal.style.display = 'flex';
+				});
+
+				// Close tab
+				if (cancelBtn) {
+					cancelBtn.addEventListener('click', () => {
+						modal.style.display = 'none';
+						// Clear form
+						document.getElementById('goal-name').value = '';
+						document.getElementById('goal-target').value = '';
+						document.getElementById('goal-current').value = '0';
+						document.getElementById('goal-date').value = '';
+					});
+				}
+
+				// Close when clicking outside
+				modal.addEventListener('click', (e) => {
+					if (e.target === modal) {
+						cancelBtn.click();
+					}
+				});
+
+				// Save goal
+				if (saveBtn) {
+					saveBtn.addEventListener('click', async () => {
+						const userId = sessionStorage.getItem('sb_user_id');
+						const name = document.getElementById('goal-name').value.trim();
+						const targetAmount = parseFloat(document.getElementById('goal-target').value);
+						const currentAmount = parseFloat(document.getElementById('goal-current').value) || 0;
+						const targetDate = document.getElementById('goal-date').value;
+
+						if (!name || !targetAmount || targetAmount <= 0) {
+							alert('Please enter a goal name and a valid target amount');
+							return;
+						}
+
+						if (!userId) {
+							alert('User not logged in');
+							return;
+						}
+
+						try {
+							const response = await fetch('/api/user/goals/add', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({
+									userId: parseInt(userId),
+									goalName: name,
+									targetAmount: targetAmount,
+									currentAmount: currentAmount,
+									targetDate: targetDate || null
+								})
+							});
+
+							const data = await response.json();
+							if (data.ok) {
+								// Close tab and clear form
+								cancelBtn.click();
+								// Reload goals
+								await loadGoals();
+							} else {
+								alert('Error adding goal: ' + (data.error || 'Unknown error'));
+							}
+						} catch (err) {
+							console.error('Add goal error:', err);
+							alert('Failed to add goal');
+						}
+					});
+				}
+			});
 		</script>
 </body>
 </html>

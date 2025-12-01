@@ -1,6 +1,62 @@
-USE `student_budget`;
+USE student_budget;
 
--- Insert a test user
+-- create tables
+CREATE TABLE IF NOT EXISTS Users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
+    date_created DATE DEFAULT CURRENT_DATE
+);
+
+CREATE TABLE IF NOT EXISTS Categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    kind ENUM('income', 'expense') NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS Transactions (
+    trans_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    category_id INT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    date DATE NOT NULL,
+    vendor VARCHAR(100),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (category_id) REFERENCES Categories(category_id)
+);
+
+CREATE TABLE IF NOT EXISTS Goals (
+    goal_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    goal_name VARCHAR(100) NOT NULL,
+    target_amount DECIMAL(10,2) NOT NULL,
+    current_amount DECIMAL(10,2) DEFAULT 0,
+    target_date DATE,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+);
+
+CREATE TABLE IF NOT EXISTS Subscriptions (
+    sub_id INT AUTO_INCREMENT PRIMARY KEY,
+    sub_name VARCHAR(100) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    frequency ENUM('daily', 'weekly', 'monthly', 'yearly') NOT NULL,
+    date_created DATE NOT NULL,
+    next_renewal DATE
+);
+
+CREATE TABLE IF NOT EXISTS User_Subscription (
+    user_id INT NOT NULL,
+    sub_id INT NOT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    PRIMARY KEY (user_id, sub_id),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (sub_id) REFERENCES Subscriptions(sub_id)
+);
+
+-- Insert a test user (if not exists)
 INSERT INTO Users (name, email, password)
 SELECT 'Test User', 'test@example.com', 'test123'
 FROM DUAL
@@ -40,89 +96,3 @@ SELECT @test_user_id, 'Salary', 'income'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM Categories WHERE user_id = @test_user_id AND name = 'Salary')
 LIMIT 1;
-
--- Get category IDs
-SET @cat_rent = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Rent' LIMIT 1);
-SET @cat_food = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Food' LIMIT 1);
-SET @cat_transport = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Transport' LIMIT 1);
-SET @cat_subscriptions = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Subscriptions' LIMIT 1);
-SET @cat_salary = (SELECT category_id FROM Categories WHERE user_id = @test_user_id AND name = 'Salary' LIMIT 1);
-
--- Insert sample transactions
-INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
-SELECT @test_user_id, @cat_rent, 650.00, CURDATE() - INTERVAL 5 DAY, 'Rent Payment'
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Rent Payment')
-LIMIT 1;
-
-INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
-SELECT @test_user_id, @cat_salary, 2500.00, CURDATE() - INTERVAL 2 DAY, 'Salary Deposit'
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Salary Deposit')
-LIMIT 1;
-
-INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
-SELECT @test_user_id, @cat_food, 85.50, CURDATE() - INTERVAL 1 DAY, 'Grocery Store'
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Grocery Store')
-LIMIT 1;
-
-INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
-SELECT @test_user_id, @cat_subscriptions, 12.99, CURDATE(), 'Netflix'
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Netflix')
-LIMIT 1;
-
-INSERT INTO Transactions (user_id, category_id, amount, date, vendor)
-SELECT @test_user_id, @cat_transport, 45.00, CURDATE(), 'Gas Station'
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Transactions WHERE user_id = @test_user_id AND vendor = 'Gas Station')
-LIMIT 1;
-
--- Insert sample subscriptions
-INSERT INTO Subscriptions (sub_name, price, frequency, date_created, next_renewal)
-SELECT 'Netflix', 12.99, 'monthly', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Subscriptions WHERE sub_name = 'Netflix')
-LIMIT 1;
-
-INSERT INTO Subscriptions (sub_name, price, frequency, date_created, next_renewal)
-SELECT 'Spotify', 9.99, 'monthly', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 MONTH)
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Subscriptions WHERE sub_name = 'Spotify')
-LIMIT 1;
-
--- Link subscriptions to test user
-INSERT INTO User_Subscription (user_id, sub_id, active)
-SELECT @test_user_id, s.sub_id, TRUE
-FROM Subscriptions s
-WHERE s.sub_name = 'Netflix'
-AND NOT EXISTS (SELECT 1 FROM User_Subscription WHERE user_id = @test_user_id AND sub_id = s.sub_id)
-LIMIT 1;
-
-INSERT INTO User_Subscription (user_id, sub_id, active)
-SELECT @test_user_id, s.sub_id, TRUE
-FROM Subscriptions s
-WHERE s.sub_name = 'Spotify'
-AND NOT EXISTS (SELECT 1 FROM User_Subscription WHERE user_id = @test_user_id AND sub_id = s.sub_id)
-LIMIT 1;
-
--- Insert sample goals for the test user
-INSERT INTO Goals (user_id, goal_name, target_amount, current_amount, target_date)
-SELECT @test_user_id, 'Emergency Fund', 1000.00, 750.00, DATE_ADD(CURDATE(), INTERVAL 3 MONTH)
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Goals WHERE user_id = @test_user_id AND goal_name = 'Emergency Fund')
-LIMIT 1;
-
-INSERT INTO Goals (user_id, goal_name, target_amount, current_amount, target_date)
-SELECT @test_user_id, 'New Laptop', 1500.00, 450.00, DATE_ADD(CURDATE(), INTERVAL 6 MONTH)
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Goals WHERE user_id = @test_user_id AND goal_name = 'New Laptop')
-LIMIT 1;
-
-INSERT INTO Goals (user_id, goal_name, target_amount, current_amount, target_date)
-SELECT @test_user_id, 'Vacation Fund', 2000.00, 200.00, DATE_ADD(CURDATE(), INTERVAL 9 MONTH)
-FROM DUAL
-WHERE NOT EXISTS (SELECT 1 FROM Goals WHERE user_id = @test_user_id AND goal_name = 'Vacation Fund')
-LIMIT 1;
-

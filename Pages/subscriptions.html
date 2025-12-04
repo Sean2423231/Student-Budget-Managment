@@ -7,6 +7,10 @@
 
   <link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
   <link rel="stylesheet" href="../assets/CSS/JS/components.subscriptions.css" />
+  <script>
+
+    window.userEmail = sessionStorage.getItem('sb_user_email') || '';
+  </script>
 </head>
 
 <body>
@@ -15,15 +19,17 @@
     <div class="container topbar">
       <h1 class="app-title">FiDough</h1>
       <div class="header-actions">
-        <button class="btn">Placeholder</button>
+        <button class="btn" id="user-email-btn"><script>document.write(window.userEmail || 'User')</script></button>
         <button id="sign-out" class="btn">Sign out</button>
       </div>
     </div>
+  </header>
+
+  <div class="content-wrapper">
     <!-- top tab bar-->
     <div class="tab-bar container" role="tablist" aria-label="Main sections">
       <div data-include="../assets/includes/topbar.html"></div>
     </div>
-  </header>
 
   <main class="container">
 
@@ -70,6 +76,7 @@
     </div>
 
   </main>
+  </div>
 
 
   <script src="../assets/CSS/JS/main.global.js" defer></script>

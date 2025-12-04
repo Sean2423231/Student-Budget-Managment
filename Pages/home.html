@@ -6,27 +6,37 @@
 	<title>Dashboard — FiDough</title>
 		<link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
 		<link rel="stylesheet" href="../assets/CSS/JS/components.dashboard.css" />
+	<script>
+		// Set email immediately to prevent flash
+		window.userEmail = sessionStorage.getItem('sb_user_email') || '';
+	</script>
 </head>
 <body>
 	<header class="dash-header">
 		<div class="container topbar">
 			<h1 class="app-title">FiDough</h1>
 			<div class="header-actions">
-				<button class="btn">Placeholder</button>
+				<button class="btn" id="user-email-btn"><script>document.write(window.userEmail || 'User')</script></button>
 				<button id="sign-out" class="btn">Sign out</button>
 			</div>
 		</div>
+	</header>
+
+	<div class="content-wrapper">
 		<!-- top tab bar-->
 		<div class="tab-bar container" role="tablist" aria-label="Main sections">
 			<div data-include="../assets/includes/topbar.html"></div>
 		</div>
-	</header>
 
-	<main class="container dashboard-grid">
+		<main class="container dashboard-grid">
 		<section class="left-col">
 			<div class="card large-chart">
 				<h3>Monthly budget</h3>
-				<div class="chart" aria-hidden="true"></div>
+				<div class="chart" id="budget-chart" aria-hidden="true" style="background:#e5e7eb;"></div>
+				<div id="chart-legend" style="display:flex; gap:16px; justify-content:center; margin-top:12px; font-size:14px;">
+					<div><span style="display:inline-block; width:12px; height:12px; background:#10b981; border-radius:2px; margin-right:4px;"></span>Income: <strong id="chart-income">$0</strong></div>
+					<div><span style="display:inline-block; width:12px; height:12px; background:#ef4444; border-radius:2px; margin-right:4px;"></span>Expenses: <strong id="chart-expenses">$0</strong></div>
+				</div>
 			</div>
 
 			<div class="card mini">
@@ -77,6 +87,7 @@
 		</aside>
 
 	</main>
+	</div>
 
 	<div id="add_goal_tab" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
 		<div style="background:white; padding:24px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.2);">

@@ -6,6 +6,10 @@
 	<title>Checkings — FiDough</title>
 	<link rel="stylesheet" href="../assets/CSS/JS/components.global.css" />
 	<link rel="stylesheet" href="../assets/CSS/JS/components.dashboard.css" />
+	<script>
+		// Set email immediately to prevent flash
+		window.userEmail = sessionStorage.getItem('sb_user_email') || '';
+	</script>
 
 </head>
 <body>
@@ -13,15 +17,17 @@
 		<div class="container topbar">
 			<h1 class="app-title">FiDough</h1>
 			<div class="header-actions">
-				<button class="btn">Placeholder</button>
+				<button class="btn" id="user-email-btn"><script>document.write(window.userEmail || 'User')</script></button>
 				<button id="sign-out" class="btn">Sign out</button>
 			</div>
 		</div>
+	</header>
+
+	<div class="content-wrapper">
 		<!-- top tab bar-->
 		<div class="tab-bar container" role="tablist" aria-label="Main sections">
 			<div data-include="../assets/includes/topbar.html"></div>
 		</div>
-	</header>
 
 	<main class="container">
 
@@ -79,7 +85,9 @@
 					<div class="card-head">
 						<h3>Balance over time</h3>
 					</div>
-
+					<svg id="balance-line-chart" width="100%" height="250" style="overflow:visible;">
+						<text x="50%" y="125" text-anchor="middle" fill="#9ca3af" font-size="14">Loading...</text>
+					</svg>
 				</section>
 
 			
@@ -87,9 +95,10 @@
 		</div>
 
 	</main>
+	</div>
 
 	<script src="../assets/CSS/JS/main.global.js" defer></script>
-	<script src="../assets/CSS/JS/main.dashboard.js" defer></script>
+	<script src="../assets/CSS/JS/main.checkings.js" defer></script>
 	<script>
 		// Simple script to update balance display on checkings page
 		document.addEventListener('DOMContentLoaded', async () => {

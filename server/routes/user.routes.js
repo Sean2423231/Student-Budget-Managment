@@ -98,28 +98,34 @@ router.get('/user/overview', async (req, res) => {
     return res.status(400).json({ok: false, error: 'Missing userId'});
   }
   try {
-    // Sum all income
+    // Sum all income from current month
     const [[income]] = await db.query(
       `SELECT IFNULL(SUM(t.amount),0) AS totalIncome 
        FROM Transactions t, Categories c
        WHERE t.category_id = c.category_id
-       AND t.user_id = ? AND c.kind = 'income'`, [userId]
+       AND t.user_id = ? AND c.kind = 'income'
+       AND MONTH(t.date) = MONTH(CURRENT_DATE())
+       AND YEAR(t.date) = YEAR(CURRENT_DATE())`, [userId]
     );
     
-    // Sum all expenses
+    // Sum all expenses from current month
     const [[expenses]] = await db.query(
       `SELECT IFNULL(SUM(t.amount),0) AS totalExpense 
        FROM Transactions t, Categories c
        WHERE t.category_id = c.category_id
-       AND t.user_id = ? AND c.kind = 'expense'`, [userId]
+       AND t.user_id = ? AND c.kind = 'expense'
+       AND MONTH(t.date) = MONTH(CURRENT_DATE())
+       AND YEAR(t.date) = YEAR(CURRENT_DATE())`, [userId]
     );
     
-    // Calculate balance
+    // Calculate balance from current month
     const [[balance]] = await db.query(
       `SELECT IFNULL(SUM(CASE WHEN c.kind = 'income' THEN t.amount ELSE -t.amount END), 0) AS balance
        FROM Transactions t, Categories c
        WHERE t.category_id = c.category_id
-       AND t.user_id = ?`, [userId]
+       AND t.user_id = ?
+       AND MONTH(t.date) = MONTH(CURRENT_DATE())
+       AND YEAR(t.date) = YEAR(CURRENT_DATE())`, [userId]
     );
 
     // Get upcoming bills from transactions
@@ -167,6 +173,56 @@ router.get('/user/overview', async (req, res) => {
     });
   } catch (err) {
     console.error('Overview error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+// Get balance history over time
+router.get('/user/balance-history', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ ok: false, error: 'Missing userId' });
+  }
+
+  try {
+    // Get all transactions for the current month, ordered by date
+    const [transactions] = await db.query(
+      `SELECT t.date, t.amount, c.kind
+       FROM Transactions t, Categories c
+       WHERE t.category_id = c.category_id
+       AND t.user_id = ?
+       AND MONTH(t.date) = MONTH(CURRENT_DATE())
+       AND YEAR(t.date) = YEAR(CURRENT_DATE())
+       ORDER BY t.date ASC, t.trans_id ASC`, [userId]
+    );
+
+    // Calculate cumulative balance at each transaction
+    let runningBalance = 0;
+    const balanceHistory = transactions.map(trans => {
+      const amount = Number(trans.amount);
+      runningBalance += trans.kind === 'income' ? amount : -amount;
+      
+      return {
+        date: trans.date,
+        balance: runningBalance
+      };
+    });
+
+    // Add starting point (beginning of month with 0 balance)
+    const today = new Date();
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    balanceHistory.unshift({
+      date: firstOfMonth,
+      balance: 0
+    });
+
+    res.json({
+      ok: true,
+      data: balanceHistory
+    });
+  } catch (err) {
+    console.error('Balance history error:', err);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });

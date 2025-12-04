@@ -31,6 +31,10 @@ function setMessage(id, msg, kind) {
 
 async function loadHtmlIncludes() {
   const includes = document.querySelectorAll('[data-include]');
+  
+  // Get email before loading includes to prevent flash
+  const email = sessionStorage.getItem('sb_user_email');
+  
   for (const el of includes) {
     const url = el.getAttribute('data-include');
     if (!url) continue;
@@ -46,6 +50,7 @@ async function loadHtmlIncludes() {
       console.error('Error loading include', url, e);
     }
   }
+  
   // Attach sign-out handlers to any page-level sign-out controls
   try {
     const signButtons = document.querySelectorAll('#sign-out, .sign-out, [data-signout]');
@@ -58,18 +63,13 @@ async function loadHtmlIncludes() {
     });
   } catch (e) { /* ignore */ }
 
+  // Set email immediately to prevent flash
   try {
-    const email = sessionStorage.getItem('sb_user_email');
     if (email) {
-
-      const headerBtns = document.querySelectorAll('.header-actions .btn');
-      headerBtns.forEach(b => {
-        if (b.textContent && b.textContent.trim().toLowerCase() === 'placeholder') {
-          b.textContent = email;
-        }
-      });
-
-      // nothing else to show — sign-out is handled per-page
+      const emailBtn = document.getElementById('user-email-btn');
+      if (emailBtn && !emailBtn.textContent.includes('@')) {
+        emailBtn.textContent = email;
+      }
     }
   } catch (e) { }
 }
@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await loadHtmlIncludes();
   highlightActiveTab();
+  
   document.dispatchEvent(new CustomEvent('includesLoaded'));
 });
 

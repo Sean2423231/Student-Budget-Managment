@@ -6,6 +6,35 @@
     }).format(num);
   }
 
+  function updatePieChart(income, expenses) {
+    const chartEl = document.getElementById('budget-chart');
+    const incomeLabel = document.getElementById('chart-income');
+    const expensesLabel = document.getElementById('chart-expenses');
+    
+    if (!chartEl) return;
+    
+    // Update legend
+    if (incomeLabel) incomeLabel.textContent = formatMoney(income);
+    if (expensesLabel) expensesLabel.textContent = formatMoney(expenses);
+    
+    // Calculate percentages
+    const total = income + expenses;
+    if (total === 0) {
+      // Show empty state
+      chartEl.style.background = '#e5e7eb';
+      return;
+    }
+    
+    const incomePercent = (income / total) * 100;
+    const expensePercent = (expenses / total) * 100;
+    
+    // Create conic gradient: green for income, red for expenses
+    chartEl.style.background = `conic-gradient(
+      #10b981 0% ${incomePercent}%,
+      #ef4444 ${incomePercent}% 100%
+    )`;
+  }
+
   async function fetchOverview(userId) {
     try {
       const res = await fetch(`/api/user/overview?userId=${userId}`);
@@ -27,6 +56,9 @@
       
       const expenseEl = document.getElementById('expense-amount');
       if (expenseEl) expenseEl.textContent = formatMoney(data.expenseTotal || 0);
+
+      // Update pie chart
+      updatePieChart(data.incomeTotal || 0, data.expenseTotal || 0);
 
       // Update bills list 
       const billsList = document.getElementById('bills-list');

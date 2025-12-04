@@ -1,4 +1,4 @@
-USE student_budget;
+USE system_database; 
 
 -- create tables
 CREATE TABLE IF NOT EXISTS Users (
@@ -57,8 +57,9 @@ CREATE TABLE IF NOT EXISTS User_Subscription (
 );
 
 -- Insert a test user (if not exists)
+--password is test123 but hashed 
 INSERT INTO Users (name, email, password)
-SELECT 'Test User', 'test@example.com', 'test123'
+SELECT 'Test User', 'test@example.com', '$2b$10$qGVX/.kRScAJzWNxa3Adbus6w6sxzJaM.snvFBWHUA0GVFcgPQOmS'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM Users WHERE email = 'test@example.com')
 LIMIT 1;

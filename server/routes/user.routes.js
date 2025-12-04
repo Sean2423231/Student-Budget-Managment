@@ -254,7 +254,7 @@ router.get('/user/goals', async (req, res) => {
   }
 });
 
-// POST /api/user/transactions/add - Add a new transaction
+//Add a new transaction
 router.post('/user/transactions/add', async (req, res) => {
   const { userId, vendor, amount, date, type } = req.body;
   
@@ -325,6 +325,86 @@ router.post('/user/goals/add', async (req, res) => {
     });
   } catch (err) {
     console.error('Add goal error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+// Add or subtract funds from a goal
+router.post('/user/goals/update-funds', async (req, res) => {
+  const { userId, goalId, amount } = req.body;
+  
+  if (!userId || !goalId || amount === undefined) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
+  }
+
+  try {
+    // Update the current_amount by adding the amount (can be positive or negative)
+    const [result] = await db.query(
+      `UPDATE Goals 
+       SET current_amount = GREATEST(0, current_amount + ?)
+       WHERE goal_id = ? AND user_id = ?`,
+      [amount, goalId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, error: 'Goal not found' });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Update goal funds error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+// Change target date of a goal
+router.post('/user/goals/update-date', async (req, res) => {
+  const { userId, goalId, targetDate } = req.body;
+  
+  if (!userId || !goalId) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
+  }
+
+  try {
+    const [result] = await db.query(
+      `UPDATE Goals 
+       SET target_date = ?
+       WHERE goal_id = ? AND user_id = ?`,
+      [targetDate || null, goalId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, error: 'Goal not found' });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Update goal date error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+//Delete a goal
+router.post('/user/goals/delete', async (req, res) => {
+  const { userId, goalId } = req.body;
+  
+  if (!userId || !goalId) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields' });
+  }
+
+  try {
+    const [result] = await db.query(
+      `DELETE FROM Goals WHERE goal_id = ? AND user_id = ?`,
+      [goalId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ ok: false, error: 'Goal not found' });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Delete goal error:', err);
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });

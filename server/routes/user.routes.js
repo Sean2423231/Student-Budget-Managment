@@ -2,7 +2,12 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db.js');
 
+//security
+const bcrypt = require('bcrypt');
+const SALT_ROUNDS = 10;   // how string the hash is, higher is safer but slower
 
+
+/*
 // Basic registration: create a new user with plain-text password.
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body || {};
@@ -22,7 +27,37 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
+*/
 
+// new registration process with hashed password
+router.post('/register', async (req, res) => {
+  const { name, email, password } = req.body || {};
+
+  // check input
+  if (!email || !password) {
+    return res.status(400).json({ ok: false, error: 'Missing email or password' });
+  }
+  try { // check if user exists
+    const [existing] = await db.query('SELECT 1 FROM Users WHERE email = ? LIMIT 1', [email]);
+    if (existing.length) {
+      return res.status(409).json({ ok: false, error: 'Email already registered' });
+    }
+
+    // hash the password before storing
+    const hash = await bcrypt.hash(password, SALT_ROUNDS);
+
+    // insert user to db
+    const [result] = await db.query('INSERT INTO Users (name, email, password) VALUES (?, ?, ?)',
+      [name || null, email, hash]
+    );
+
+    const userId = result.insertId;
+    res.status(201).json({ ok: true, user: { id: userId, name: name || null, email } });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
 
 
 //login
@@ -35,8 +70,8 @@ router.post('/login', async (req, res) => {
   try {
     // Try to find a user where the stored password equals the provided password
     const [rows] = await db.query(
-      `SELECT user_id, name, email FROM Users WHERE email = ? AND password = ? LIMIT 1`,
-      [email, password]
+      `SELECT user_id, name, email, password FROM Users WHERE email = ? LIMIT 1`,
+      [email]
     );
 
     if (!rows.length) {
@@ -44,7 +79,13 @@ router.post('/login', async (req, res) => {
     }
 
     const user = rows[0];
+    // comapre password w/ stored hash password 
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ ok: false, error: 'Invalid credentials' });
+    }
     res.json({ ok: true, user: { id: user.user_id, name: user.name, email: user.email } });
+    
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ ok: false, error: 'Server error' });

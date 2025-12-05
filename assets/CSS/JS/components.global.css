@@ -95,7 +95,6 @@ body > * {
 .dash-header .container{position:relative}
 
 @media (min-width:800px){
-  .dash-header .header-actions{position:fixed;right:18px;top:12px;z-index:30}
   main.container{padding-top:28px}
 }
 @media (max-width:799px){

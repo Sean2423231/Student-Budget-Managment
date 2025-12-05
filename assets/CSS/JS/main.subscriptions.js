@@ -142,6 +142,7 @@
       let n = document.getElementById("new-name").value.trim();
       let d = parseInt(document.getElementById("new-day").value);
       let amt = parseFloat(document.getElementById("new-amount").value);
+      let freq = document.getElementById("new-frequency").value;
 
       if (!n || !d || isNaN(amt) || d < 1 || d > 31) {
         alert("Please fill in all fields with valid values");
@@ -164,7 +165,7 @@
             name: n,
             price: amt,
             day: d,
-            frequency: 'monthly'
+            frequency: freq
           })
         });
 
@@ -177,6 +178,7 @@
           document.getElementById("new-name").value = "";
           document.getElementById("new-day").value = "";
           document.getElementById("new-amount").value = "";
+          document.getElementById("new-frequency").value = "monthly";
         } else {
           alert("Error adding subscription: " + (data.error || "Unknown error"));
         }

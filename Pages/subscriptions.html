@@ -55,6 +55,13 @@
             <li>
               <label for="new-name" class="sr-only">Subscription name</label>
               <input id="new-name" placeholder="Name of subscription" />
+              <label for="new-frequency" class="sr-only">Frequency</label>
+              <select id="new-frequency" style="padding:8px; border-radius:6px; border:1px solid #e5e7eb;">
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Bi-weekly</option>
+                <option value="monthly" selected>Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
               <label for="new-day" class="sr-only">Day of month</label>
               <input id="new-day" type="number" min="1" max="31" placeholder="Day of month" />
               <label for="new-amount" class="sr-only">Amount</label>

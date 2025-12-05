@@ -1,5 +1,9 @@
 /* Subscriptions calendar styles */
 .calendar-card{padding:16px;display:flex;flex-direction:column;gap:12px}
+.view-tabs{display:flex;gap:8px;margin-bottom:12px;border-bottom:1px solid #eef2f6;}
+.view-tab{background:transparent;border:none;padding:10px 16px;cursor:pointer;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.2s;}
+.view-tab:hover{color:var(--primary);}
+.view-tab.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:600;}
 .calendar-header{display:flex;align-items:center;justify-content:space-between}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
 .calendar-weekday{font-size:12px;color:var(--muted);text-align:center;padding:6px}
@@ -18,7 +22,7 @@
 .add-sub-card{margin-top:12px;padding:16px}
 .add-sub-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
 .add-sub-list li{display:block}
-.add-sub-list input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #eef2f6;height:44px}
+.add-sub-list input,.add-sub-list select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #eef2f6;height:44px;font-size:14px;background:white;}
 .add-sub-list .add-action{display:flex;justify-content:flex-end}
 .add-sub-list .add-action button{height:44px;border-radius:10px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center}
 

@@ -249,12 +249,17 @@ router.get('/user/subscriptions', async (req, res) => {
       `SELECT s.sub_id AS id,
               s.sub_name AS name,
               s.price AS amount,
-              COALESCE(DAY(s.next_renewal), 1) AS day,
-              s.frequency
+              CASE 
+                WHEN s.frequency = 'yearly' THEN COALESCE(MONTH(s.next_renewal) - 1, 0)
+                WHEN s.frequency = 'weekly' THEN COALESCE(DAYOFWEEK(s.next_renewal) - 1, 0)
+                ELSE COALESCE(DAY(s.next_renewal), 1)
+              END AS day,
+              s.frequency,
+              s.yearly_day
        FROM User_Subscription us, Subscriptions s
        WHERE us.sub_id = s.sub_id
        AND us.user_id = ? AND us.active = 1
-       ORDER BY day ASC`, [userId]
+       ORDER BY s.frequency, day ASC`, [userId]
     );
 
     res.json({ ok: true, subscriptions: subs });
@@ -266,27 +271,49 @@ router.get('/user/subscriptions', async (req, res) => {
 
 //Add a new subscription
 router.post('/user/subscriptions/add', async (req, res) => {
-  const { userId, name, price, day, frequency } = req.body;
+  const { userId, name, price, day, frequency, yearlyDay } = req.body;
   
-  if (!userId || !name || !price || !day) {
+  if (!userId || !name || !price) {
     return res.status(400).json({ ok: false, error: 'Missing required fields' });
   }
 
   try {
-    // Calculate next renewal date based on day of month
+    // Calculate next renewal date based on frequency
     const today = new Date();
-    const currentDay = today.getDate();
-    let nextRenewal = new Date(today.getFullYear(), today.getMonth(), day);
+    let nextRenewal;
     
-    if (day < currentDay) {
-      nextRenewal = new Date(today.getFullYear(), today.getMonth() + 1, day);
+    if (frequency === 'yearly') {
+      // For yearly: day is month (0-11), yearlyDay is day of month
+      const month = parseInt(day);
+      const dayOfMonth = parseInt(yearlyDay);
+      nextRenewal = new Date(today.getFullYear(), month, dayOfMonth);
+      if (nextRenewal < today) {
+        nextRenewal = new Date(today.getFullYear() + 1, month, dayOfMonth);
+      }
+    } else if (frequency === 'daily') {
+      nextRenewal = new Date(today);
+      nextRenewal.setDate(nextRenewal.getDate() + 1);
+    } else if (frequency === 'weekly') {
+      // day is day of week (0-6)
+      const targetDay = parseInt(day);
+      const currentDay = today.getDay();
+      const daysUntil = (targetDay - currentDay + 7) % 7;
+      nextRenewal = new Date(today);
+      nextRenewal.setDate(nextRenewal.getDate() + (daysUntil || 7));
+    } else {
+      // Monthly
+      const currentDay = today.getDate();
+      nextRenewal = new Date(today.getFullYear(), today.getMonth(), day);
+      if (day < currentDay) {
+        nextRenewal = new Date(today.getFullYear(), today.getMonth() + 1, day);
+      }
     }
 
     // Insert into Subscriptions table
     const [result] = await db.query(
-      `INSERT INTO Subscriptions (sub_name, price, frequency, date_created, next_renewal)
-       VALUES (?, ?, ?, CURDATE(), ?)`,
-      [name, price, frequency || 'monthly', nextRenewal]
+      `INSERT INTO Subscriptions (sub_name, price, frequency, date_created, next_renewal, yearly_day)
+       VALUES (?, ?, ?, CURDATE(), ?, ?)`,
+      [name, price, frequency || 'monthly', nextRenewal, yearlyDay || null]
     );
 
     const subId = result.insertId;
@@ -305,7 +332,8 @@ router.post('/user/subscriptions/add', async (req, res) => {
         name, 
         amount: parseFloat(price), 
         day: parseInt(day),
-        frequency: frequency || 'monthly'
+        frequency: frequency || 'monthly',
+        yearly_day: yearlyDay ? parseInt(yearlyDay) : null
       } 
     });
   } catch (err) {

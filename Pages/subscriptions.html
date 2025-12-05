@@ -43,7 +43,7 @@
         </div>
         <div id="calendar" class="calendar-grid" role="grid"></div>
         <div class="calendar-footer">
-          <div>Total monthly subscriptions:
+          <div>Total subscriptions for this month:
             <strong id="subs-total">$0.00</strong>
           </div>
         </div>
@@ -56,14 +56,38 @@
               <label for="new-name" class="sr-only">Subscription name</label>
               <input id="new-name" placeholder="Name of subscription" />
               <label for="new-frequency" class="sr-only">Frequency</label>
-              <select id="new-frequency" style="padding:8px; border-radius:6px; border:1px solid #e5e7eb;">
+              <select id="new-frequency">
+                <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
-                <option value="biweekly">Bi-weekly</option>
                 <option value="monthly" selected>Monthly</option>
                 <option value="yearly">Yearly</option>
               </select>
-              <label for="new-day" class="sr-only">Day of month</label>
+              <label for="new-month" class="sr-only" id="month-label">Month</label>
+              <select id="new-month" style="display:none;">
+                <option value="0">January</option>
+                <option value="1">February</option>
+                <option value="2">March</option>
+                <option value="3">April</option>
+                <option value="4">May</option>
+                <option value="5">June</option>
+                <option value="6">July</option>
+                <option value="7">August</option>
+                <option value="8">September</option>
+                <option value="9">October</option>
+                <option value="10">November</option>
+                <option value="11">December</option>
+              </select>
+              <label for="new-day" class="sr-only" id="day-label">Day of month</label>
               <input id="new-day" type="number" min="1" max="31" placeholder="Day of month" />
+              <select id="new-day-dropdown" style="display:none;">
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
               <label for="new-amount" class="sr-only">Amount</label>
               <input id="new-amount" type="number" step="0.01" placeholder="Amount" />
             <li class="add-action">

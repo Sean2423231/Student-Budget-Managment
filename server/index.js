@@ -12,6 +12,11 @@ app.use(cors());
 
 //Initialize database connection
 require('./db.js');
+
+// Start subscription processor for automatic transactions
+const { startSubscriptionProcessor } = require('./jobs/subscriptionProcessor');
+startSubscriptionProcessor();
+
 app.use(express.static(path.join(__dirname, '..')));
 app.use(express.json());
 

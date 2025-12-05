@@ -153,7 +153,10 @@ router.get('/user/overview', async (req, res) => {
     
     // Get recent transactions
     const [transactions] = await db.query(
-      `SELECT t.vendor, t.amount, DATE_FORMAT(t.date, '%b %e') AS dateLabel, c.name AS category
+      `SELECT t.vendor, 
+              CASE WHEN c.kind = 'expense' THEN -t.amount ELSE t.amount END AS amount,
+              DATE_FORMAT(t.date, '%b %e') AS dateLabel, 
+              c.name AS category
        FROM Transactions t, Categories c
        WHERE t.category_id = c.category_id
        AND t.user_id = ?

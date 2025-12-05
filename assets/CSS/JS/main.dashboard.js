@@ -79,7 +79,8 @@
         if (data.transactions && data.transactions.length > 0) {
           transList.innerHTML = data.transactions.map(trans => {
             const amount = typeof trans.amount === 'number' ? trans.amount : parseFloat(trans.amount);
-            return `<li>${trans.vendor} — <span class="muted">${trans.dateLabel}</span> <strong>${formatMoney(amount)}</strong></li>`;
+            const color = amount >= 0 ? 'color: #10b981' : 'color: #ef4444';
+            return `<li>${trans.vendor} — <span class="muted">${trans.dateLabel}</span> <strong style="${color}">${formatMoney(amount)}</strong></li>`;
           }).join('');
         } else {
           transList.innerHTML = '<li class="muted">No transactions</li>';

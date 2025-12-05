@@ -61,15 +61,49 @@
       updatePieChart(data.incomeTotal || 0, data.expenseTotal || 0);
 
       // Update bills list 
+      // show upcoming subscriptions only
       const billsList = document.getElementById('bills-list');
       if (billsList) {
-        if (data.bills && data.bills.length > 0) {
-          billsList.innerHTML = data.bills.map(bill => {
-            const amount = typeof bill.amount === 'number' ? bill.amount : parseFloat(bill.amount);
-            return `<li>${bill.vendor} — <span class="muted">${bill.dueDate}</span> <strong>${formatMoney(amount)}</strong></li>`;
-          }).join('');
-        } else {
-          billsList.innerHTML = '<li class="muted">No upcoming bills</li>';
+        billsList.innerHTML = '<li class="muted">Loading...</li>';
+
+        try {
+          const subsRes = await fetch(`/api/user/subscriptions?userId=${userId}`);
+          const subsJson = await subsRes.json();
+
+          if (!subsJson.ok || !Array.isArray(subsJson.subscriptions) || subsJson.subscriptions.length === 0) {
+            billsList.innerHTML = '<li class="muted">No recurring subscriptions</li>';
+            return;
+          }
+
+          const today = new Date().getDate();
+          const subs = subsJson.subscriptions.map(sub => ({
+            id: sub.id,
+            name: sub.name,
+            day: sub.day,
+            amount: parseFloat(sub.amount),
+            frequency: sub.frequency
+          }));
+
+          // sort by next occurrence
+          const upcoming = subs
+            .map(sub => {
+              let delta = sub.day - today;
+              if (delta < 0) delta += 31;
+              return { ...sub, delta };
+            })
+            .sort((a, b) => a.delta - b.delta)
+            .slice(0, 5);
+
+          billsList.innerHTML = upcoming.map(sub => `
+            <li>
+              ${sub.name}
+              — <span class="muted">day ${sub.day} · ${sub.frequency}</span>
+              <strong>${formatMoney(sub.amount)}</strong>
+            </li>
+          `).join('');
+        } catch (err) {
+          console.error('Failed to load subscriptions for dashboard:', err);
+          billsList.innerHTML = '<li class="muted">Error loading subscriptions</li>';
         }
       }
 

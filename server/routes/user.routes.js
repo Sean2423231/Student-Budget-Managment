@@ -118,14 +118,12 @@ router.get('/user/overview', async (req, res) => {
        AND YEAR(t.date) = YEAR(CURRENT_DATE())`, [userId]
     );
     
-    // Calculate balance from current month
+    // Calculate total balance (all time)
     const [[balance]] = await db.query(
       `SELECT IFNULL(SUM(CASE WHEN c.kind = 'income' THEN t.amount ELSE -t.amount END), 0) AS balance
        FROM Transactions t, Categories c
        WHERE t.category_id = c.category_id
-       AND t.user_id = ?
-       AND MONTH(t.date) = MONTH(CURRENT_DATE())
-       AND YEAR(t.date) = YEAR(CURRENT_DATE())`, [userId]
+       AND t.user_id = ?`, [userId]
     );
 
     // Get upcoming bills from transactions
@@ -188,6 +186,15 @@ router.get('/user/balance-history', async (req, res) => {
   }
 
   try {
+    // Get balance from before this month
+    const [[previousBalance]] = await db.query(
+      `SELECT IFNULL(SUM(CASE WHEN c.kind = 'income' THEN t.amount ELSE -t.amount END), 0) AS balance
+       FROM Transactions t, Categories c
+       WHERE t.category_id = c.category_id
+       AND t.user_id = ?
+       AND t.date < DATE_FORMAT(CURRENT_DATE(), '%Y-%m-01')`, [userId]
+    );
+
     // Get all transactions for the current month, ordered by date
     const [transactions] = await db.query(
       `SELECT t.date, t.amount, c.kind
@@ -200,7 +207,7 @@ router.get('/user/balance-history', async (req, res) => {
     );
 
     // Calculate cumulative balance at each transaction
-    let runningBalance = 0;
+    let runningBalance = Number(previousBalance.balance);
     const balanceHistory = transactions.map(trans => {
       const amount = Number(trans.amount);
       runningBalance += trans.kind === 'income' ? amount : -amount;
@@ -211,13 +218,13 @@ router.get('/user/balance-history', async (req, res) => {
       };
     });
 
-    // Add starting point (beginning of month with 0 balance)
+    // Add starting point
     const today = new Date();
     const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     
     balanceHistory.unshift({
       date: firstOfMonth,
-      balance: 0
+      balance: Number(previousBalance.balance)
     });
 
     res.json({

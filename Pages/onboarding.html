@@ -79,14 +79,15 @@
 				const form = document.getElementById('signup-form');
 				const authContainer = document.querySelector('.auth-container');
 				const ctas = document.getElementById('onboard-ctas');
-				if(authContainer) authContainer.style.display = '';
 				if(form) form.style.display = 'none';
 				if(ctas) ctas.style.display = 'block';
 			}
 	    }
+	    // Run immediately to prevent flash of form
+	    showOnboardIfNeeded();
 	    if(document.readyState === 'loading'){
 	      document.addEventListener('DOMContentLoaded', showOnboardIfNeeded);
-	    } else { showOnboardIfNeeded(); }
+	    }
 	  })();
 	</script>
 

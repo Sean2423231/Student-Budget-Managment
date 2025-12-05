@@ -27,7 +27,7 @@
           });
           const data = await res.json();
           if (!res.ok || !data.ok) {
-            helpers.setMessage('login-message', data.error || 'Login failed', 'error');
+            // Suppress server error messages
             return;
           }
 
@@ -43,7 +43,7 @@
           setTimeout(() => { window.location.href = 'home.html'; }, 700);
         } catch (err) {
           console.error('Login request failed', err);
-          helpers.setMessage('login-message','Server error during login','error');
+          // Suppress server error messages
         }
       });
     }
@@ -75,7 +75,6 @@
           });
           const data = await res.json();
           if (!res.ok || !data.ok) {
-            helpers.setMessage('signup-message', data.error || 'Registration failed', 'error');
             return;
           }
 
@@ -90,8 +89,6 @@
             helpers.setMessage('signup-message','Account created — taking you to onboarding...','success');
           setTimeout(() => { window.location.href = 'onboarding.html?onboard=true' }, 900);
         } catch (err) {
-          console.error('Register request failed', err);
-          helpers.setMessage('signup-message','Server error during registration','error');
         }
       });
     }
